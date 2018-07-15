@@ -193,7 +193,7 @@ class ExportToGPKG:
         t = QFileDialog.getSaveFileName(self.dlg, "Select output file ", "", "*.gpkg")
         file_extension = t[1].replace("*", "")
         self.output_filename = t[0] + file_extension
-        self.dlg.lineEdit.setText(str(self.output_filename))
+        self.dlg.lineEdit.setText(self.output_filename)
 
     def generate_gpkg(self, layers):
         import gdal
@@ -208,7 +208,7 @@ class ExportToGPKG:
             return
         input_ds = gdal.Open(filename)
         # convert to gpkg
-        output_ds = gdal.Translate("%s.gpkg" % "ciao", input_ds)
+        output_ds = gdal.Translate(self.output_filename, input_ds)
         # close the datasets properly
         input_ds = None
         output_ds = None
