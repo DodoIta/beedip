@@ -23,7 +23,7 @@
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QAction, QFileDialog
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -33,6 +33,9 @@ import os.path
 
 
 class ExportToGPKG:
+    # class parameters
+    output_filename = None
+
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface):
@@ -158,6 +161,10 @@ class ExportToGPKG:
 
         self.actions.append(action)
 
+        # call select_output_file on click
+        self.dlg.lineEdit.clear()
+        self.dlg.pushButton.clicked.connect(self.select_output_file)
+
         return action
 
     def initGui(self):
@@ -182,7 +189,47 @@ class ExportToGPKG:
         del self.toolbar
 
 
+    def select_output_file(self):
+        t = QFileDialog.getSaveFileName(self.dlg, "Select output file ", "", "*.gpkg")
+        file_extension = t[1].replace("*", "")
+        self.output_filename = t[0] + file_extension
+        self.dlg.lineEdit.setText(str(self.output_filename))
+
+    def generate_gpkg(self, layers):
+        import gdal
+        from qgis.core import QgsDataProvider
+
+        # get the selected file from the comboBox
+        layer_index = self.dlg.comboBox.currentIndex()
+        selected_layer = layers[layer_index]
+        filename = selected_layer.layer().source()
+        # open the file
+        if not filename:
+            return
+        input_ds = gdal.Open(filename)
+        # convert to gpkg
+        output_ds = gdal.Translate("%s.gpkg" % "ciao", input_ds)
+        # close the datasets properly
+        input_ds = None
+        output_ds = None
+
+
     def run(self):
+        from qgis.core import QgsProject, QgsLayerTree
+        # add layers to the combobox
+        self.dlg.lineEdit.clear()
+        # get a list of all the layers in the project, except groups
+        layers = []
+        for layer in QgsProject.instance().layerTreeRoot().children():
+            if QgsLayerTree.isGroup(layer):
+                for child in layer.children():
+                    layers.append(child)
+            else:
+                layers.append(layer)
+        # add the layers to the combobox
+        self.dlg.comboBox.addItems(layer.name() for layer in layers)
+        #self.dlg.lineEdit.setText(str(layers[0].layer().source()))
+
         """Run method that performs all the real work"""
         # show the dialog
         self.dlg.show()
@@ -190,6 +237,5 @@ class ExportToGPKG:
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
+            self.generate_gpkg(layers)
             pass
