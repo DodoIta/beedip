@@ -161,10 +161,6 @@ class ExportToGPKG:
 
         self.actions.append(action)
 
-        # call select_output_file on click
-        self.dlg.lineEdit.clear()
-        self.dlg.pushButton.clicked.connect(self.select_output_file)
-
         return action
 
     def initGui(self):
@@ -176,6 +172,10 @@ class ExportToGPKG:
             text=self.tr(u'Export To GPKG'),
             callback=self.run,
             parent=self.iface.mainWindow())
+
+        # call select_output_file on click
+        self.dlg.lineEdit.clear()
+        self.dlg.pushButton.clicked.connect(self.select_output_file)
 
 
     def unload(self):
@@ -216,7 +216,7 @@ class ExportToGPKG:
 
     def run(self):
         from qgis.core import QgsProject, QgsLayerTree
-        # add layers to the combobox
+
         self.dlg.lineEdit.clear()
         # get a list of all the layers in the project, except groups
         layers = []
@@ -228,7 +228,6 @@ class ExportToGPKG:
                 layers.append(layer)
         # add the layers to the combobox
         self.dlg.comboBox.addItems(layer.name() for layer in layers)
-        #self.dlg.lineEdit.setText(str(layers[0].layer().source()))
 
         """Run method that performs all the real work"""
         # show the dialog
