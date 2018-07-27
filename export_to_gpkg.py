@@ -35,6 +35,7 @@ import os.path
 class ExportToGPKG:
     # class parameters
     output_filename = None
+    layers = []
 
     """QGIS Plugin Implementation."""
 
@@ -73,6 +74,20 @@ class ExportToGPKG:
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'ExportToGPKG')
         self.toolbar.setObjectName(u'ExportToGPKG')
+
+        ### my code ###
+        from qgis.core import QgsProject, QgsLayerTree
+
+        self.dlg.lineEdit.clear()
+        # get a list of all the layers in the project, except groups
+        for layer in QgsProject.instance().layerTreeRoot().children():
+            if QgsLayerTree.isGroup(layer):
+                for child in layer.children():
+                    self.layers.append(child)
+            else:
+                self.layers.append(layer)
+        # add the layers to the combobox
+        self.dlg.comboBox.addItems(layer.name() for layer in self.layers)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -197,7 +212,6 @@ class ExportToGPKG:
 
     def generate_gpkg(self, layers):
         import gdal
-        from qgis.core import QgsDataProvider
 
         # get the selected file from the comboBox
         layer_index = self.dlg.comboBox.currentIndex()
@@ -215,20 +229,6 @@ class ExportToGPKG:
 
 
     def run(self):
-        from qgis.core import QgsProject, QgsLayerTree
-
-        self.dlg.lineEdit.clear()
-        # get a list of all the layers in the project, except groups
-        layers = []
-        for layer in QgsProject.instance().layerTreeRoot().children():
-            if QgsLayerTree.isGroup(layer):
-                for child in layer.children():
-                    layers.append(child)
-            else:
-                layers.append(layer)
-        # add the layers to the combobox
-        self.dlg.comboBox.addItems(layer.name() for layer in layers)
-
         """Run method that performs all the real work"""
         # show the dialog
         self.dlg.show()
@@ -236,5 +236,5 @@ class ExportToGPKG:
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            self.generate_gpkg(layers)
+            self.generate_gpkg(self.layers)
             pass
