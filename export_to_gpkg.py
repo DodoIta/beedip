@@ -23,7 +23,8 @@
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QFileDialog
+from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
+from qgis.core import QgsApplication
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -34,6 +35,7 @@ import os.path
 
 class ExportToGPKG:
     # class parameters
+    input_filename = None
     output_filename = None
     layers = []
 
@@ -192,6 +194,9 @@ class ExportToGPKG:
         self.dlg.lineEdit.clear()
         self.dlg.pushButton.clicked.connect(self.select_output_file)
 
+        # call select_input_file on click
+        self.dlg.lineEdit.clear()
+        self.dlg.pushButton_2.clicked.connect(self.select_input_file)
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -209,6 +214,29 @@ class ExportToGPKG:
         file_extension = t[1].replace("*", "")
         self.output_filename = t[0] + file_extension
         self.dlg.lineEdit.setText(self.output_filename)
+
+    def select_input_file(self):
+        t = QFileDialog.getOpenFileName(self.dlg, "Select input file ", "", "*.gpkg")
+        file_extension = t[1].replace("*", "")
+        self.input_filename = t[0]
+        self.dlg.lineEdit.setText(self.input_filename)
+
+    def import_svg(self):
+        from shutil import copyfile
+
+        origin = os.path.join(self.plugin_dir, 'svg')
+        destination = os.path.join(QgsApplication.qgisSettingsDirPath(), 'svg')
+        if not os.path.exists(destination):
+            os.makedirs(destination)
+        for item in os.listdir(origin):
+            s = os.path.join(origin,item)
+            d = os.path.join(destination,item)
+            if not os.path.lexists(d):  # if there's no broken symlink
+                try:
+                    copyfile(s,d)
+                except IOError as e:
+                    print("Unable to copy file. %s" % e)
+        print('\nFile copy done!\n')
 
     def generate_gpkg(self, layers):
         import gdal
@@ -237,4 +265,10 @@ class ExportToGPKG:
         # See if OK was pressed
         if result:
             self.generate_gpkg(self.layers)
-            pass
+
+            self.import_svg()
+
+            if os.path.exists(self.input_filename):
+                layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
+            else:
+                error_dialog = QMessageBox.critical(None, "Error", "File not found.")
