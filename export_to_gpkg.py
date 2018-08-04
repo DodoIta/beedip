@@ -266,9 +266,9 @@ class ExportToGPKG:
         if result:
             self.import_svg()
             # check current tab
-            if self.dlg.currentIndex() == 0:
+            if self.dlg.tabWidget.currentIndex() == 0:
                 self.generate_gpkg(self.layers)
-            elif self.dlg.currentIndex() == 1:
+            elif self.dlg.tabWidget.currentIndex() == 1:
                 if os.path.exists(self.input_filename):
                     layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
                 else:
