@@ -17,11 +17,11 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
-     <widget class="QWidget" name="exporter">
+     <widget class="QWidget" name="export_2">
       <attribute name="title">
-       <string>Exporter</string>
+       <string>Export</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
@@ -68,9 +68,9 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_4">
+     <widget class="QWidget" name="import_2">
       <attribute name="title">
-       <string>Importer</string>
+       <string>Import</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
