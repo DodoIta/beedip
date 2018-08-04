@@ -219,7 +219,7 @@ class ExportToGPKG:
         t = QFileDialog.getOpenFileName(self.dlg, "Select input file ", "", "*.gpkg")
         file_extension = t[1].replace("*", "")
         self.input_filename = t[0]
-        self.dlg.lineEdit.setText(self.input_filename)
+        self.dlg.lineEdit_2.setText(self.input_filename)
 
     def import_svg(self):
         from shutil import copyfile
@@ -264,11 +264,12 @@ class ExportToGPKG:
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            self.generate_gpkg(self.layers)
-
             self.import_svg()
-
-            if os.path.exists(self.input_filename):
-                layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
-            else:
-                error_dialog = QMessageBox.critical(None, "Error", "File not found.")
+            # check current tab
+            if self.dlg.currentIndex() == 0:
+                self.generate_gpkg(self.layers)
+            elif self.dlg.currentIndex() == 1:
+                if os.path.exists(self.input_filename):
+                    layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
+                else:
+                    error_dialog = QMessageBox.critical(None, "Error", "File not found.")
