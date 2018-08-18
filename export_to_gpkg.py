@@ -77,19 +77,6 @@ class ExportToGPKG:
         self.toolbar = self.iface.addToolBar(u'ExportToGPKG')
         self.toolbar.setObjectName(u'ExportToGPKG')
 
-        ### my code ###
-        from qgis.core import QgsProject, QgsLayerTree
-
-        self.dlg.lineEdit.clear()
-        # get a list of all the layers in the project, except groups
-        for layer in QgsProject.instance().layerTreeRoot().children():
-            if QgsLayerTree.isGroup(layer):
-                for child in layer.children():
-                    self.layers.append(child)
-            else:
-                self.layers.append(layer)
-        # add the layers to the combobox
-        self.dlg.comboBox.addItems(layer.name() for layer in self.layers)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -198,6 +185,10 @@ class ExportToGPKG:
         self.dlg.lineEdit.clear()
         self.dlg.pushButton_2.clicked.connect(self.select_input_file)
 
+        # add the layers to the combobox
+        self.add_layers()
+
+
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
@@ -209,10 +200,24 @@ class ExportToGPKG:
         del self.toolbar
 
 
+    def add_layers(self):
+        from qgis.core import QgsProject, QgsLayerTree
+
+        self.dlg.lineEdit.clear()
+        # get a list of all the layers in the project, except groups
+        for layer in QgsProject.instance().layerTreeRoot().children():
+            if QgsLayerTree.isGroup(layer):
+                for child in layer.children():
+                    self.layers.append(child)
+            else:
+                self.layers.append(layer)
+        # add the layers to the combobox
+        self.dlg.comboBox.addItems(layer.name() for layer in self.layers)
+
     def select_output_file(self):
         t = QFileDialog.getSaveFileName(self.dlg, "Select output file ", "", "*.gpkg")
         file_extension = t[1].replace("*", "")
-        self.output_filename = t[0] + file_extension
+        self.output_filename = t[0]# + file_extension
         self.dlg.lineEdit.setText(self.output_filename)
 
     def select_input_file(self):
@@ -238,22 +243,36 @@ class ExportToGPKG:
                     print("Unable to copy file. %s" % e)
         print('\nFile copy done!\n')
 
-    def generate_gpkg(self, layers):
+    def generate_gpkg(self):
         import gdal
 
         # get the selected file from the comboBox
         layer_index = self.dlg.comboBox.currentIndex()
-        selected_layer = layers[layer_index]
+        selected_layer = self.layers[layer_index]
         filename = selected_layer.layer().source()
+        # check the selected layer
+        format = filename.rstrip(".")[1]
         # open the file
         if not filename:
             return
         input_ds = gdal.Open(filename)
+        # get the file format and the driver
+        driver = gdal.GetDriverByName(format)
         # convert to gpkg
         output_ds = gdal.Translate(self.output_filename, input_ds)
         # close the datasets properly
         input_ds = None
         output_ds = None
+
+    def export_layers(self):
+        from qgis.core import QgsVectorFileWriter
+
+        # get the selected layers
+        layers = self.iface.layerTreeView().selectedLayers()
+        for layer in layers:
+            options = ["layerName=%s" % layer.name()]
+            QgsVectorFileWriter.writeAsVectorFormat(layer, self.output_filename,
+                                                "utf-8", newFilename="daoijf")
 
 
     def run(self):
@@ -267,7 +286,8 @@ class ExportToGPKG:
             self.import_svg()
             # check current tab
             if self.dlg.tabWidget.currentIndex() == 0:
-                self.generate_gpkg(self.layers)
+                #self.generate_gpkg()
+                self.export_layers()
             elif self.dlg.tabWidget.currentIndex() == 1:
                 if os.path.exists(self.input_filename):
                     layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
