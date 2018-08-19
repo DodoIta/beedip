@@ -270,9 +270,16 @@ class ExportToGPKG:
         # get the selected layers
         layers = self.iface.layerTreeView().selectedLayers()
         for layer in layers:
-            options = ["layerName=%s" % layer.name()]
+            # out = self.output_filename
+            # x = out.rsplit("/")
+            # y = x[len(x)-1]
+            # y = "%s.gpkg" % layer.name()
+            # print(x + y)
             QgsVectorFileWriter.writeAsVectorFormat(layer, self.output_filename,
-                                                "utf-8", newFilename="daoijf")
+                    "utf-8", layerOptions=["layerName=ciao", "driverName=GPKG"])
+            print("exported layer %s" % layer.name())
+            # save style to the database
+            layer.saveStyleToDatabase(layer.name(), "", False, "")
 
 
     def run(self):
