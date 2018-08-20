@@ -186,7 +186,7 @@ class ExportToGPKG:
         self.dlg.pushButton_2.clicked.connect(self.select_input_file)
 
         # add the layers to the combobox
-        self.add_layers()
+        #self.add_layers()
 
 
     def unload(self):
@@ -200,19 +200,19 @@ class ExportToGPKG:
         del self.toolbar
 
 
-    def add_layers(self):
-        from qgis.core import QgsProject, QgsLayerTree
-
-        self.dlg.lineEdit.clear()
-        # get a list of all the layers in the project, except groups
-        for layer in QgsProject.instance().layerTreeRoot().children():
-            if QgsLayerTree.isGroup(layer):
-                for child in layer.children():
-                    self.layers.append(child)
-            else:
-                self.layers.append(layer)
-        # add the layers to the combobox
-        self.dlg.comboBox.addItems(layer.name() for layer in self.layers)
+    # def add_layers(self):
+    #     from qgis.core import QgsProject, QgsLayerTree
+    #
+    #     self.dlg.lineEdit.clear()
+    #     # get a list of all the layers in the project, except groups
+    #     for layer in QgsProject.instance().layerTreeRoot().children():
+    #         if QgsLayerTree.isGroup(layer):
+    #             for child in layer.children():
+    #                 self.layers.append(child)
+    #         else:
+    #             self.layers.append(layer)
+    #     # add the layers to the combobox
+    #     self.dlg.comboBox.addItems(layer.name() for layer in self.layers)
 
     def select_output_file(self):
         t = QFileDialog.getSaveFileName(self.dlg, "Select output file ", "", "*.gpkg")
@@ -265,22 +265,37 @@ class ExportToGPKG:
         output_ds = None
 
     def export_layers(self):
-        from qgis.core import QgsVectorFileWriter
+        from qgis.core import QgsVectorFileWriter, QgsCoordinateReferenceSystem
 
         # get the selected layers
         layers = self.iface.layerTreeView().selectedLayers()
         for layer in layers:
             # out = self.output_filename
             # x = out.rsplit("/")
-            # y = x[len(x)-1]
-            # y = "%s.gpkg" % layer.name()
-            # print(x + y)
+            crs = layer.crs()
+            options = {"IDENTIFIER" : layer.name(),
+                        "OVERWRITE" : "YES"}
+            opt = QgsVectorFileWriter.SaveVectorOptions()
+            opt.layerName = layer.name()
+            opt.layerOptions = ["IDENTIFIER=ciao", "DESCRIPTION=prova"]
+            opt.actionOnExistingFile = 2
             QgsVectorFileWriter.writeAsVectorFormat(layer, self.output_filename,
-                    "utf-8", layerOptions=["layerName=ciao", "driverName=GPKG"])
+                    options=opt)
+            # QgsVectorLayerExporter.exportLayer(layer, self.output_filename, "GPKG",
+            #         crs, options=options)
             print("exported layer %s" % layer.name())
             # save style to the database
-            layer.saveStyleToDatabase(layer.name(), "", False, "")
+            #layer.saveStyleToDatabase(layer.name(), "", False, "")
 
+    def import_layers(self):
+        try:
+            layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
+        except Exception as e:
+            print(e)
+        try:
+            layer = self.iface.addRasterLayer(self.input_filename, "imported raster")
+        except Exception as e:
+            print(e)
 
     def run(self):
         """Run method that performs all the real work"""
@@ -297,6 +312,6 @@ class ExportToGPKG:
                 self.export_layers()
             elif self.dlg.tabWidget.currentIndex() == 1:
                 if os.path.exists(self.input_filename):
-                    layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
+                    self.import_layers()
                 else:
                     error_dialog = QMessageBox.critical(None, "Error", "File not found.")
