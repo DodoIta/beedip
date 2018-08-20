@@ -26,20 +26,11 @@
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
+         <item alignment="Qt::AlignVCenter">
           <widget class="QLabel" name="label">
            <property name="text">
-            <string>Select a layer</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="comboBox">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
+            <string>Please make sure the layers to be exported have been selected
+from the layer legend.</string>
            </property>
           </widget>
          </item>
@@ -54,7 +45,7 @@
            </property>
           </widget>
          </item>
-         <item>
+         <item alignment="Qt::AlignVCenter">
           <widget class="QLineEdit" name="lineEdit"/>
          </item>
          <item>
