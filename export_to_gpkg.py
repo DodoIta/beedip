@@ -265,27 +265,23 @@ class ExportToGPKG:
         output_ds = None
 
     def export_layers(self):
-        from qgis.core import QgsVectorFileWriter, QgsCoordinateReferenceSystem
+        from qgis.core import QgsVectorFileWriter
 
         # get the selected layers
         layers = self.iface.layerTreeView().selectedLayers()
         for layer in layers:
-            # out = self.output_filename
-            # x = out.rsplit("/")
             crs = layer.crs()
-            options = {"IDENTIFIER" : layer.name(),
-                        "OVERWRITE" : "YES"}
             opt = QgsVectorFileWriter.SaveVectorOptions()
             opt.layerName = layer.name()
-            opt.layerOptions = ["IDENTIFIER=ciao", "DESCRIPTION=prova"]
-            opt.actionOnExistingFile = 2
-            QgsVectorFileWriter.writeAsVectorFormat(layer, self.output_filename,
+            opt.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
+            error = QgsVectorFileWriter.writeAsVectorFormat(layer, self.output_filename,
                     options=opt)
-            # QgsVectorLayerExporter.exportLayer(layer, self.output_filename, "GPKG",
-            #         crs, options=options)
-            print("exported layer %s" % layer.name())
+            if error[0] == 0:
+                print("exported layer %s" % layer.name())
+            else:
+                print(error)
             # save style to the database
-            #layer.saveStyleToDatabase(layer.name(), "", False, "")
+            layer.saveStyleToDatabase(layer.name(), "", False, "")
 
     def import_layers(self):
         try:
