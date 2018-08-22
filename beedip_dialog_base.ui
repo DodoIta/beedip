@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>ExportToGPKGDialogBase</class>
- <widget class="QDialog" name="ExportToGPKGDialogBase">
+ <class>BeeDipDialogBase</class>
+ <widget class="QDialog" name="BeeDipDialogBase">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Export To GPKG</string>
+   <string>BeeDip</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -146,7 +146,7 @@ from the layer legend.</string>
   <connection>
    <sender>button_box</sender>
    <signal>accepted()</signal>
-   <receiver>ExportToGPKGDialogBase</receiver>
+   <receiver>BeeDipDialogBase</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -162,7 +162,7 @@ from the layer legend.</string>
   <connection>
    <sender>button_box</sender>
    <signal>rejected()</signal>
-   <receiver>ExportToGPKGDialogBase</receiver>
+   <receiver>BeeDipDialogBase</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

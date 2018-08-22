@@ -7,17 +7,17 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=Export To GPKG
+name=BeeDip
 qgisMinimumVersion=3.0
-description=Export layers to a gpkg file
-version=0.1
-author=DodoIta
+description=Official plugin of the BeeDip Android app
+version=1.0
+author=Davide Cortellucci
 email=davide.cor94@gmail.com
 
-about=This plugin lets you export selected layers to a Geopackage file for later use in BeeDip.
+about=This plugin lets you import layers from a GeoPackage and export selected layers to a Geopackage file for later use in BeeDip.
 
-tracker=https://github.com/DodoIta/export-to-gpkg/issues
-repository=https://github.com/DodoIta/export-to-gpkg
+tracker=https://github.com/DodoIta/beedip/issues
+repository=https://github.com/DodoIta/beedip
 # End of mandatory metadata
 
 # Recommended items:
@@ -26,7 +26,7 @@ repository=https://github.com/DodoIta/export-to-gpkg
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python geopackage export beedip
+tags=python geopackage export beedip import
 
 homepage=https://github.com/DodoIta/export-to-gpkg
 category=Plugins
