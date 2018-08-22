@@ -243,13 +243,10 @@ class ExportToGPKG:
                     print("Unable to copy file. %s" % e)
         print('\nFile copy done!\n')
 
-    def generate_gpkg(self):
+    def export_raster(self, layer):
         import gdal
 
-        # get the selected file from the comboBox
-        layer_index = self.dlg.comboBox.currentIndex()
-        selected_layer = self.layers[layer_index]
-        filename = selected_layer.layer().source()
+        filename = layer.source()
         # check the selected layer
         format = filename.rstrip(".")[1]
         # open the file
@@ -264,24 +261,38 @@ class ExportToGPKG:
         input_ds = None
         output_ds = None
 
-    def export_layers(self):
+    def export_vector(self, layer):
         from qgis.core import QgsVectorFileWriter
+
+        crs = layer.crs()
+        opt = QgsVectorFileWriter.SaveVectorOptions()
+        opt.layerName = layer.name()
+        opt.layerOptions = ["OVERWRITE=YES"]
+        opt.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
+        error = QgsVectorFileWriter.writeAsVectorFormat(layer, self.output_filename,
+        options=opt)
+        if error[0] == 0:
+            print("Exported layer %s" % layer.name())
+        else:
+            print(error)
+
+    def export_layers(self):
+        from qgis.core import QgsRasterLayer, QgsVectorLayer
 
         # get the selected layers
         layers = self.iface.layerTreeView().selectedLayers()
+
         for layer in layers:
-            crs = layer.crs()
-            opt = QgsVectorFileWriter.SaveVectorOptions()
-            opt.layerName = layer.name()
-            opt.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
-            error = QgsVectorFileWriter.writeAsVectorFormat(layer, self.output_filename,
-                    options=opt)
-            if error[0] == 0:
-                print("exported layer %s" % layer.name())
-            else:
-                print(error)
+            print("Exporting layer %s" % layer.name())
+            # check layer type
+            if type(layer) is QgsRasterLayer:
+                print("%s is a raster" % layer.name())
+                self.export_raster(layer)
+            elif type(layer) is QgsVectorLayer:
+                print("%s is a vector" % layer.name())
+                self.export_vector(layer)
             # save style to the database
-            layer.saveStyleToDatabase(layer.name(), "", False, "")
+            #layer.saveStyleToDatabase(layer.name(), "", False, "")
 
     def import_layers(self):
         try:
@@ -304,7 +315,6 @@ class ExportToGPKG:
             self.import_svg()
             # check current tab
             if self.dlg.tabWidget.currentIndex() == 0:
-                #self.generate_gpkg()
                 self.export_layers()
             elif self.dlg.tabWidget.currentIndex() == 1:
                 if os.path.exists(self.input_filename):
