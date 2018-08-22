@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/export_to_gpkg" >
+    <qresource prefix="/plugins/beedip" >
         <file>icon.png</file>
     </qresource>
 </RCC>

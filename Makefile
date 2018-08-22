@@ -1,5 +1,5 @@
 #/***************************************************************************
-# ExportToGPKG
+# BeeDip
 #
 # Export layers to a gpkg file
 #							 -------------------
@@ -38,15 +38,15 @@ LOCALES =
 # translation
 SOURCES = \
 	__init__.py \
-	export_to_gpkg.py export_to_gpkg_dialog.py
+	beedip.py beedip_dialog.py
 
-PLUGINNAME = export_to_gpkg
+PLUGINNAME = beedip
 
 PY_FILES = \
 	__init__.py \
-	export_to_gpkg.py export_to_gpkg_dialog.py
+	beedip.py beedip_dialog.py
 
-UI_FILES = export_to_gpkg_dialog_base.ui
+UI_FILES = beedip_dialog_base.ui
 
 EXTRAS = metadata.txt icon.png
 
