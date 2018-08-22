@@ -292,17 +292,35 @@ class ExportToGPKG:
                 print("%s is a vector" % layer.name())
                 self.export_vector(layer)
             # save style to the database
-            #layer.saveStyleToDatabase(layer.name(), "", False, "")
+            if self.dlg.checkBox.isChecked():
+                print("Exporting style too.")
+                layer.saveStyleToDatabase("%s_style" % layer.name(), "", False, "")
 
     def import_layers(self):
-        try:
-            layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
-        except Exception as e:
-            print(e)
-        try:
+        import sqlite3
+
+        has_raster = False
+        has_vector = False
+
+        # open the db
+        connection = sqlite3.connect(self.input_filename)
+        c = connection.cursor()
+        # check if a raster is present
+        rows = c.execute("select * from gpkg_tile_matrix").fetchall()
+        if len(rows) > 0:
+            has_raster = True
+        # check if a vector is present
+        rows = c.execute("select * from gpkg_contents where data_type != \"tiles\"").fetchall()
+        if len(rows) > 0:
+            has_vector = True
+        # close the db
+        c.close()
+
+        if has_raster:
             layer = self.iface.addRasterLayer(self.input_filename, "imported raster")
-        except Exception as e:
-            print(e)
+        if has_vector:
+            layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
+
 
     def run(self):
         """Run method that performs all the real work"""
