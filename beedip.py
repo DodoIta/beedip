@@ -21,7 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import *
+from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QDockWidget
 from qgis.core import QgsApplication
@@ -29,16 +29,11 @@ from qgis.core import QgsApplication
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
-from .beedip_dialog import BeeDipDialog
+from .beedip_dockwidget import BeeDipDockWidget
 import os.path
 
 
 class BeeDip:
-    # class parameters
-    input_filename = None
-    output_filename = None
-    layers = []
-
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface):
@@ -51,8 +46,10 @@ class BeeDip:
         """
         # Save reference to the QGIS interface
         self.iface = iface
+
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
+
         # initialize locale
         locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
@@ -67,15 +64,17 @@ class BeeDip:
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
 
-        # Create the dialog (after translation) and keep reference
-        self.dlg = BeeDipDialog()
-
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&BeeDip')
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'BeeDip')
         self.toolbar.setObjectName(u'BeeDip')
+
+        #print "** INITIALIZING BeeDip"
+
+        self.pluginIsActive = False
+        self.dockwidget = None
 
 
     # noinspection PyMethodMayBeStatic
@@ -167,52 +166,18 @@ class BeeDip:
 
         return action
 
+
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/beedip/icon.png'
+        icon_path = ':/plugins/bee_dip/icon.png'
         self.add_action(
             icon_path,
-            text=self.tr(u'BeeDip'),
+            text=self.tr(u'to do'),
             callback=self.run,
             parent=self.iface.mainWindow())
 
-        # call select_output_file on click
-        self.dlg.lineEdit.clear()
-        self.dlg.pushButton.clicked.connect(self.select_output_file)
 
-        # call select_input_file on click
-        self.dlg.lineEdit.clear()
-        self.dlg.pushButton_2.clicked.connect(self.select_input_file)
-
-        # add the layers to the combobox
-        #self.add_layers()
-
-
-    def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
-        for action in self.actions:
-            self.iface.removePluginMenu(
-                self.tr(u'&BeeDip'),
-                action)
-            self.iface.removeToolBarIcon(action)
-        # remove the toolbar
-        del self.toolbar
-
-
-    # def add_layers(self):
-    #     from qgis.core import QgsProject, QgsLayerTree
-    #
-    #     self.dlg.lineEdit.clear()
-    #     # get a list of all the layers in the project, except groups
-    #     for layer in QgsProject.instance().layerTreeRoot().children():
-    #         if QgsLayerTree.isGroup(layer):
-    #             for child in layer.children():
-    #                 self.layers.append(child)
-    #         else:
-    #             self.layers.append(layer)
-    #     # add the layers to the combobox
-    #     self.dlg.comboBox.addItems(layer.name() for layer in self.layers)
 
     def select_output_file(self):
         t = QFileDialog.getSaveFileName(self.dlg, "Select output file ", "", "*.gpkg")
@@ -321,26 +286,71 @@ class BeeDip:
         if has_vector:
             layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
 
+    #--------------------------------------------------------------------------
+
+    def onClosePlugin(self):
+        """Cleanup necessary items here when plugin dockwidget is closed"""
+
+        #print "** CLOSING BeeDip"
+
+        # disconnects
+        self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
+
+        # remove this statement if dockwidget is to remain
+        # for reuse if plugin is reopened
+
+        self.pluginIsActive = False
+
+    def unload(self):
+        """Removes the plugin menu item and icon from QGIS GUI."""
+
+        #print "** UNLOAD BeeDip"
+
+        for action in self.actions:
+            self.iface.removePluginMenu(
+                self.tr(u'&BeeDip'),
+                action)
+            self.iface.removeToolBarIcon(action)
+        # remove the toolbar
+        del self.toolbar
+
+    #--------------------------------------------------------------------------
 
     def run(self):
-        """Run method that performs all the real work"""
+        """Run method that loads and starts the plugin"""
 
-        # create the Dock Widget
-        dock = QDockWidget("BeeDip", self.iface.mainWindow())
-        dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
-        self.iface.addDockWidget(Qt.BottomDockWidgetArea, dock)
-        # show the dialog
-        self.dlg.show()
-        # Run the dialog event loop
-        result = self.dlg.exec_()
-        # See if OK was pressed
-        if result:
-            self.import_svg()
-            # check current tab
-            if self.dlg.tabWidget.currentIndex() == 0:
-                self.export_layers()
-            elif self.dlg.tabWidget.currentIndex() == 1:
-                if os.path.exists(self.input_filename):
-                    self.import_layers()
-                else:
-                    error_dialog = QMessageBox.critical(None, "Error", "File not found.")
+        if not self.pluginIsActive:
+            self.pluginIsActive = True
+
+            #print "** STARTING BeeDip"
+
+            # dockwidget may not exist if:
+            #    first run of plugin
+            #    removed on close (see self.onClosePlugin method)
+            if self.dockwidget == None:
+                # Create the dockwidget (after translation) and keep reference
+                self.dockwidget = BeeDipDockWidget()
+                # call select_output_file on click
+                self.dockwidget.lineEdit.clear()
+                self.dockwidget.pushButton.clicked.connect(self.select_output_file)
+                # call select_input_file on click
+                self.dockwidget.lineEdit.clear()
+                self.dockwidget.pushButton_2.clicked.connect(self.select_input_file)
+
+            # connect to provide cleanup on closing of dockwidget
+            self.dockwidget.closingPlugin.connect(self.onClosePlugin)
+
+            # show the dockwidget
+            # TODO: fix to allow choice of dock location
+            self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.dockwidget)
+            self.dockwidget.show()
+
+        # self.import_svg()
+        # # check current tab
+        # if self.dlg.tabWidget.currentIndex() == 0:
+        #     self.export_layers()
+        # elif self.dlg.tabWidget.currentIndex() == 1:
+        #     if os.path.exists(self.input_filename):
+        #         self.import_layers()
+        #     else:
+        #         error_dialog = QMessageBox.critical(None, "Error", "File not found.")
