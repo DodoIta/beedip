@@ -180,16 +180,16 @@ class BeeDip:
 
 
     def select_output_file(self):
-        t = QFileDialog.getSaveFileName(self.dlg, "Select output file ", "", "*.gpkg")
+        t = QFileDialog.getSaveFileName(self.dockwidget, "Select output file ", "", "*.gpkg")
         file_extension = t[1].replace("*", "")
         self.output_filename = t[0]
-        self.dlg.lineEdit.setText(self.output_filename)
+        self.dockwidget.lineEdit.setText(self.output_filename)
 
     def select_input_file(self):
-        t = QFileDialog.getOpenFileName(self.dlg, "Select input file ", "", "*.gpkg")
+        t = QFileDialog.getOpenFileName(self.dockwidget, "Select input file ", "", "*.gpkg")
         file_extension = t[1].replace("*", "")
         self.input_filename = t[0]
-        self.dlg.lineEdit_2.setText(self.input_filename)
+        self.dockwidget.lineEdit_2.setText(self.input_filename)
 
     def import_svg(self):
         from shutil import copyfile
@@ -257,7 +257,7 @@ class BeeDip:
                 print("%s is a vector" % layer.name())
                 self.export_vector(layer)
             # save style to the database
-            if not type(layer) is QgsRasterLayer and self.dlg.checkBox.isChecked():
+            if not type(layer) is QgsRasterLayer and self.dockwidget.checkBox.isChecked():
                 print("Exporting style too.")
                 layer.saveStyleToDatabase("%s_style" % layer.name(), "", False, "")
 
@@ -347,9 +347,9 @@ class BeeDip:
 
         # self.import_svg()
         # # check current tab
-        # if self.dlg.tabWidget.currentIndex() == 0:
+        # if self.dockwidget.tabWidget.currentIndex() == 0:
         #     self.export_layers()
-        # elif self.dlg.tabWidget.currentIndex() == 1:
+        # elif self.dockwidget.tabWidget.currentIndex() == 1:
         #     if os.path.exists(self.input_filename):
         #         self.import_layers()
         #     else:
