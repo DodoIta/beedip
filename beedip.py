@@ -21,9 +21,9 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+from PyQt5.QtCore import *
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QDockWidget
 from qgis.core import QgsApplication
 
 # Initialize Qt resources from file resources.py
@@ -324,6 +324,11 @@ class BeeDip:
 
     def run(self):
         """Run method that performs all the real work"""
+
+        # create the Dock Widget
+        dock = QDockWidget("BeeDip", self.iface.mainWindow())
+        dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
+        self.iface.addDockWidget(Qt.BottomDockWidgetArea, dock)
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
