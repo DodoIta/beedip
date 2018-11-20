@@ -130,8 +130,8 @@ from the layer legend.</string>
       </widget>
      </widget>
     </item>
-    <item>
-     <widget class="QDialogButtonBox" name="button_box">
+    <item alignment="Qt::AlignHCenter">
+     <widget class="QDialogButtonBox" name="buttonBox">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>

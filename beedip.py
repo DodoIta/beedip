@@ -23,7 +23,7 @@
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QDockWidget
+from PyQt5.QtWidgets import *
 from qgis.core import QgsApplication
 
 # Initialize Qt resources from file resources.py
@@ -323,6 +323,7 @@ class BeeDip:
             self.pluginIsActive = True
 
             #print "** STARTING BeeDip"
+            self.import_svg()
 
             # dockwidget may not exist if:
             #    first run of plugin
@@ -336,6 +337,8 @@ class BeeDip:
                 # call select_input_file on click
                 self.dockwidget.lineEdit.clear()
                 self.dockwidget.pushButton_2.clicked.connect(self.select_input_file)
+                # connect the ok button
+                self.dockwidget.buttonBox.accepted.connect(self.perform_action)
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
@@ -345,12 +348,12 @@ class BeeDip:
             self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
 
-        # self.import_svg()
-        # # check current tab
-        # if self.dockwidget.tabWidget.currentIndex() == 0:
-        #     self.export_layers()
-        # elif self.dockwidget.tabWidget.currentIndex() == 1:
-        #     if os.path.exists(self.input_filename):
-        #         self.import_layers()
-        #     else:
-        #         error_dialog = QMessageBox.critical(None, "Error", "File not found.")
+    def perform_action(self):
+        # check current tab
+        if self.dockwidget.tabWidget.currentIndex() == 0:
+            self.export_layers()
+        elif self.dockwidget.tabWidget.currentIndex() == 1:
+            if os.path.exists(self.input_filename):
+                self.import_layers()
+            else:
+                error_dialog = QMessageBox.critical(None, "Error", "File not found.")
