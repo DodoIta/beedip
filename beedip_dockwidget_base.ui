@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>650</width>
+    <width>848</width>
     <height>271</height>
    </rect>
   </property>
@@ -14,7 +14,7 @@
    <string>BeeDip</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QHBoxLayout" name="horizontalLayout_5">
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
@@ -42,8 +42,7 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>Please make sure the layers to be exported have been selected
-from the layer legend.</string>
+             <string>Please make sure the layers to be exported have been selected from the layer legend on the left.</string>
             </property>
             <property name="scaledContents">
              <bool>false</bool>
@@ -130,13 +129,13 @@ from the layer legend.</string>
       </widget>
      </widget>
     </item>
-    <item alignment="Qt::AlignHCenter">
+    <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
      <widget class="QDialogButtonBox" name="buttonBox">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
       <property name="standardButtons">
-       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       <set>QDialogButtonBox::Ok</set>
       </property>
      </widget>
     </item>
