@@ -36,6 +36,11 @@ import os.path
 class BeeDip:
     """QGIS Plugin Implementation."""
 
+    input_filename = None
+    output_filename = None
+    # this QGIS tool emits as QgsPoint after each click on the map canvas
+    point_tool = None
+
     def __init__(self, iface):
         """Constructor.
 
@@ -339,6 +344,7 @@ class BeeDip:
                 self.dockwidget.pushButton_2.clicked.connect(self.select_input_file)
                 # connect the ok button
                 self.dockwidget.buttonBox.accepted.connect(self.perform_action)
+                self.dockwidget.buttonBox.rejected.connect(self.fence_raster)
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
@@ -357,3 +363,31 @@ class BeeDip:
                 self.import_layers()
             else:
                 error_dialog = QMessageBox.critical(None, "Error", "File not found.")
+
+
+    def fence_raster(self):
+        from os import system
+        from qgis.gui import QgsMapToolEmitPoint
+
+        x_min, x_max = "0.0", "0.0"
+        y_min, y_max = "0.0", "0.0"
+        output_file = "/home/dodo/Projects/QGIS/tmp" # TODO: change it later
+
+        # prompt the user to select a fence
+        # get the fence's coordinates
+        canvas = self.iface.mapCanvas()
+        point_tool = QgsMapToolEmitPoint(canvas)
+
+        def get_coordinates(self):
+            print(point_tool.toMapCoordinates(canvas.mouseLastXY()))
+
+        point_tool.canvasClicked.connect(get_coordinates)
+        canvas.setMapTool(point_tool)
+
+
+        # get the selected layers
+        layers = self.iface.layerTreeView().selectedLayers()
+
+        # for layer in layers:
+        #     if type(layer) is QgsRasterLayer:
+        #         os.system("gdal_translate -projwin %s %s %s %s -ot Float32 -of GTiff %s") % [x_min, y_min, x_max, y_max, output_file]
