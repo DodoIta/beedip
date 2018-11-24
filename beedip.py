@@ -24,8 +24,7 @@
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import *
-from qgis.core import QgsApplication
-
+from qgis.core import QgsApplication, QgsRasterLayer, QgsVectorLayer, QgsMapLayer
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
@@ -247,8 +246,6 @@ class BeeDip:
             print(error)
 
     def export_layers(self):
-        from qgis.core import QgsRasterLayer, QgsVectorLayer
-
         # get the selected layers
         layers = self.iface.layerTreeView().selectedLayers()
 
@@ -364,30 +361,45 @@ class BeeDip:
             else:
                 error_dialog = QMessageBox.critical(None, "Error", "File not found.")
 
-
     def fence_raster(self):
         from os import system
-        from qgis.gui import QgsMapToolEmitPoint
+        from qgis.gui import QgsMapToolEmitPoint, QgsMapToolPan
 
-        x_min, x_max = "0.0", "0.0"
-        y_min, y_max = "0.0", "0.0"
+        x_min, y_min = "0.0", "0.0"
+        x_max, y_max = "0.0", "0.0"
+        counter = 0
         output_file = "/home/dodo/Projects/QGIS/tmp" # TODO: change it later
 
         # prompt the user to select a fence
+
         # get the fence's coordinates
         canvas = self.iface.mapCanvas()
         point_tool = QgsMapToolEmitPoint(canvas)
 
-        def get_coordinates(self):
-            print(point_tool.toMapCoordinates(canvas.mouseLastXY()))
+        def clip_raster(self):
+            import gdal
 
-        point_tool.canvasClicked.connect(get_coordinates)
+            nonlocal counter
+            nonlocal x_min, y_min, x_max, y_max, output_file
+            counter += 1
+            coords = point_tool.toMapCoordinates(canvas.mouseLastXY())
+            if counter == 1:
+                x_min, y_min = coords.x(), coords.y()
+            elif counter == 2:
+                x_max, y_max = coords.x(), coords.y()
+                # restore the map tool: the point selection is done
+                canvas.setMapTool(QgsMapToolPan(canvas))
+                # get the selected layers
+                layer = canvas.currentLayer()
+                # perform the clip
+                if layer.type() == QgsMapLayer.RasterLayer:
+                    # clip the raster
+                    filename = layer.source()
+                    ds = gdal.Open(filename)
+                    ds = gdal.Translate(output_file + "/clipped.tif", ds, projWin = [x_min, y_min, x_max, y_max])
+                    ds = None
+                    # add it as a layer
+                    # self.iface.addRasterLayer(output_file + "/clipped.tif", "clipped_raster")
+
+        point_tool.canvasClicked.connect(clip_raster)
         canvas.setMapTool(point_tool)
-
-
-        # get the selected layers
-        layers = self.iface.layerTreeView().selectedLayers()
-
-        # for layer in layers:
-        #     if type(layer) is QgsRasterLayer:
-        #         os.system("gdal_translate -projwin %s %s %s %s -ot Float32 -of GTiff %s") % [x_min, y_min, x_max, y_max, output_file]
