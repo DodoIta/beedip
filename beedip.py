@@ -37,8 +37,12 @@ class BeeDip:
 
     input_filename = None
     output_filename = None
-    # this QGIS tool emits as QgsPoint after each click on the map canvas
+    # raster fence parameters
     point_tool = None
+    canvas = None
+    ux, uy = "0.0", "0.0" # top-left point
+    lx, ly = "0.0", "0.0" # bottom-right point
+    output_file = "/home/dodo/Projects/QGIS/tmp" # TODO: change it later
 
     def __init__(self, iface):
         """Constructor.
@@ -341,7 +345,8 @@ class BeeDip:
                 self.dockwidget.pushButton_2.clicked.connect(self.select_input_file)
                 # connect the ok button
                 self.dockwidget.buttonBox.accepted.connect(self.perform_action)
-                self.dockwidget.buttonBox.rejected.connect(self.fence_raster)
+                # connect the other buttons
+                self.dockwidget.startButton.clicked.connect(self.start_fence)
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
@@ -361,52 +366,71 @@ class BeeDip:
             else:
                 error_dialog = QMessageBox.critical(None, "Error", "File not found.")
 
-    def fence_raster(self):
-        from os import system
+    def start_fence(self):
         from qgis.gui import QgsMapToolEmitPoint, QgsMapToolPan, QgsRubberBand
 
-        ux, uy = "0.0", "0.0" # top-left point
-        lx, ly = "0.0", "0.0" # bottom-right point
-        counter = 0
-        output_file = "/home/dodo/Projects/QGIS/tmp" # TODO: change it later
-
+        first_row = self.dockwidget.row_1
+        if not first_row.isEnabled():
+            first_row.setEnabled(True)
         # prompt the user to select a fence
 
-        # get the fence's coordinates
-        canvas = self.iface.mapCanvas()
-        point_tool = QgsMapToolEmitPoint(canvas)
+        # start tracking mouse click
+        self.canvas = self.iface.mapCanvas()
+        self.point_tool = QgsMapToolEmitPoint(self.canvas)
+        self.point_tool.canvasClicked.connect(self.get_first_point)
+        self.canvas.setMapTool(self.point_tool)
 
-        def clip_raster(self):
-            import gdal
+    def get_first_point(self):
+        # get the coordinates
+        coords = self.point_tool.toMapCoordinates(self.canvas.mouseLastXY())
+        self.ux, self.uy = coords.x(), coords.y()
+        # update gui
+        self.dockwidget.ulLineEdit.setText(str(self.ux) + " " + str(self.uy))
+        # enable the second row
+        second_row = self.dockwidget.row_4
+        if not second_row.isEnabled():
+            second_row.setEnabled(True)
+        self.point_tool.canvasClicked.disconnect(self.get_second_point)
+        self.point_tool.canvasClicked.connect(self.get_second_point)
 
-            nonlocal counter
-            nonlocal ux, uy, lx, ly, output_file
-            counter += 1
-            coords = point_tool.toMapCoordinates(canvas.mouseLastXY())
-            if counter == 1:
-                ux, uy = coords.x(), coords.y()
-            elif counter == 2:
-                lx, ly = coords.x(), coords.y()
-                # restore the map tool: the point selection is done
-                canvas.setMapTool(QgsMapToolPan(canvas))
-                # get the selected layers
-                layer = canvas.currentLayer()
-                # perform the clip
-                if layer.type() == QgsMapLayer.RasterLayer:
-                    # clip the raster
-                    filename = layer.source()
-                    ds = gdal.Open(filename)
-                    ds = gdal.Translate(output_file + "/clipped.tif", ds, projWin = [ux, uy, lx, ly])
-                    ds = None
-                    # add it as a layer
-                    # self.iface.addRasterLayer(output_file + "/clipped.tif", "clipped_raster")
-                polyline = QgsRubberBand(canvas, False)  # False = not a polygon
-                points = [QgsPoint(ux, ly), QgsPoint(ux, uy), QgsPoint(lx, uy), QgsPoint(lx, ly), QgsPoint(ux, ly)]
-                polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
-                polyline.setColor(QColor(255, 0, 0))
-                polyline.setFillColor(QColor(0, 0, 255, 10))
-                polyline.setWidth(2)
-                polyline.show()
+    def get_second_point(self, point_tool):
+        # get the coordinates
+        coords = self.point_tool.toMapCoordinates(self.canvas.mouseLastXY())
+        self.lx, self.ly = coords.x(), coords.y()
 
-        point_tool.canvasClicked.connect(clip_raster)
-        canvas.setMapTool(point_tool)
+    #     from os import system
+    #     from qgis.gui import QgsMapToolEmitPoint, QgsMapToolPan, QgsRubberBand
+    #
+    #     counter = 0
+    #
+    #
+    #     def clip_raster(self):
+    #         import gdal
+    #
+    #         nonlocal counter
+    #         nonlocal ux, uy, lx, ly, output_file
+    #         counter += 1
+    #         if counter == 1:
+    #             ux, uy = coords.x(), coords.y()
+    #         elif counter == 2:
+    #             lx, ly = coords.x(), coords.y()
+    #             # restore the map tool: the point selection is done
+    #             canvas.setMapTool(QgsMapToolPan(canvas))
+    #             # get the selected layers
+    #             layer = canvas.currentLayer()
+    #             # perform the clip
+    #             if layer.type() == QgsMapLayer.RasterLayer:
+    #                 # clip the raster
+    #                 filename = layer.source()
+    #                 ds = gdal.Open(filename)
+    #                 ds = gdal.Translate(output_file + "/clipped.tif", ds, projWin = [ux, uy, lx, ly])
+    #                 ds = None
+    #                 # add it as a layer
+    #                 # self.iface.addRasterLayer(output_file + "/clipped.tif", "clipped_raster")
+    #             polyline = QgsRubberBand(canvas, False)  # False = not a polygon
+    #             points = [QgsPoint(ux, ly), QgsPoint(ux, uy), QgsPoint(lx, uy), QgsPoint(lx, ly), QgsPoint(ux, ly)]
+    #             polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
+    #             polyline.setColor(QColor(255, 0, 0))
+    #             polyline.setFillColor(QColor(0, 0, 255, 10))
+    #             polyline.setWidth(2)
+    #             polyline.show()
