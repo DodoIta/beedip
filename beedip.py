@@ -22,9 +22,9 @@
  ***************************************************************************/
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import *
-from qgis.core import QgsApplication, QgsRasterLayer, QgsVectorLayer, QgsMapLayer
+from qgis.core import *
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
@@ -363,10 +363,10 @@ class BeeDip:
 
     def fence_raster(self):
         from os import system
-        from qgis.gui import QgsMapToolEmitPoint, QgsMapToolPan
+        from qgis.gui import QgsMapToolEmitPoint, QgsMapToolPan, QgsRubberBand
 
-        x_min, y_min = "0.0", "0.0"
-        x_max, y_max = "0.0", "0.0"
+        ux, uy = "0.0", "0.0" # top-left point
+        lx, ly = "0.0", "0.0" # bottom-right point
         counter = 0
         output_file = "/home/dodo/Projects/QGIS/tmp" # TODO: change it later
 
@@ -380,13 +380,13 @@ class BeeDip:
             import gdal
 
             nonlocal counter
-            nonlocal x_min, y_min, x_max, y_max, output_file
+            nonlocal ux, uy, lx, ly, output_file
             counter += 1
             coords = point_tool.toMapCoordinates(canvas.mouseLastXY())
             if counter == 1:
-                x_min, y_min = coords.x(), coords.y()
+                ux, uy = coords.x(), coords.y()
             elif counter == 2:
-                x_max, y_max = coords.x(), coords.y()
+                lx, ly = coords.x(), coords.y()
                 # restore the map tool: the point selection is done
                 canvas.setMapTool(QgsMapToolPan(canvas))
                 # get the selected layers
@@ -396,10 +396,17 @@ class BeeDip:
                     # clip the raster
                     filename = layer.source()
                     ds = gdal.Open(filename)
-                    ds = gdal.Translate(output_file + "/clipped.tif", ds, projWin = [x_min, y_min, x_max, y_max])
+                    ds = gdal.Translate(output_file + "/clipped.tif", ds, projWin = [ux, uy, lx, ly])
                     ds = None
                     # add it as a layer
                     # self.iface.addRasterLayer(output_file + "/clipped.tif", "clipped_raster")
+                polyline = QgsRubberBand(canvas, False)  # False = not a polygon
+                points = [QgsPoint(ux, ly), QgsPoint(ux, uy), QgsPoint(lx, uy), QgsPoint(lx, ly), QgsPoint(ux, ly)]
+                polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
+                polyline.setColor(QColor(255, 0, 0))
+                polyline.setFillColor(QColor(0, 0, 255, 10))
+                polyline.setWidth(2)
+                polyline.show()
 
         point_tool.canvasClicked.connect(clip_raster)
         canvas.setMapTool(point_tool)
