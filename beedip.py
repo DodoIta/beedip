@@ -346,7 +346,7 @@ class BeeDip:
                 # connect the ok button
                 self.dockwidget.buttonBox.accepted.connect(self.perform_action)
                 # connect the other buttons
-                self.dockwidget.startButton.clicked.connect(self.start_fence)
+                self.dockwidget.ulButton.clicked.connect(self.start_fence)
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
@@ -367,11 +367,8 @@ class BeeDip:
                 error_dialog = QMessageBox.critical(None, "Error", "File not found.")
 
     def start_fence(self):
-        from qgis.gui import QgsMapToolEmitPoint, QgsMapToolPan, QgsRubberBand
+        from qgis.gui import QgsMapToolEmitPoint
 
-        first_row = self.dockwidget.row_1
-        if not first_row.isEnabled():
-            first_row.setEnabled(True)
         # prompt the user to select a fence
 
         # start tracking mouse click
@@ -381,56 +378,67 @@ class BeeDip:
         self.canvas.setMapTool(self.point_tool)
 
     def get_first_point(self):
+        from qgis.gui import QgsMapToolPan
+
         # get the coordinates
         coords = self.point_tool.toMapCoordinates(self.canvas.mouseLastXY())
         self.ux, self.uy = coords.x(), coords.y()
         # update gui
         self.dockwidget.ulLineEdit.setText(str(self.ux) + " " + str(self.uy))
         # enable the second row
-        second_row = self.dockwidget.row_4
-        if not second_row.isEnabled():
-            second_row.setEnabled(True)
-        self.point_tool.canvasClicked.disconnect(self.get_second_point)
+        self.point_tool.canvasClicked.disconnect(self.get_first_point)
+        self.dockwidget.lrButton.clicked.connect(self.enable_second_button)
+        # reset the map tool
+        self.canvas.setMapTool(QgsMapToolPan(self.canvas))
+
+    def enable_second_button(self):
+        # btn = self.dockwidget.lrButton
+        # if not btn.isEnabled():
+        #     btn.setEnabled(True)
+        self.canvas.setMapTool(self.point_tool)
         self.point_tool.canvasClicked.connect(self.get_second_point)
 
-    def get_second_point(self, point_tool):
+    def get_second_point(self):
+        from qgis.gui import QgsMapToolPan, QgsRubberBand
+
         # get the coordinates
         coords = self.point_tool.toMapCoordinates(self.canvas.mouseLastXY())
         self.lx, self.ly = coords.x(), coords.y()
+        # update gui
+        self.dockwidget.lrLineEdit.setText(str(self.lx) + " " + str(self.ly))
+        # disconnect event
+        self.point_tool.canvasClicked.disconnect(self.get_second_point)
+        # reset the map tool
+        self.canvas.setMapTool(QgsMapToolPan(self.canvas))
+        # draw rectangle
+        polyline = QgsRubberBand(self.canvas, False)  # False = not a polygon
+        points = [QgsPoint(self.ux, self.ly), QgsPoint(self.ux, self.uy), QgsPoint(self.lx, self.uy), QgsPoint(self.lx, self.ly), QgsPoint(self.ux, self.ly)]
+        polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
+        polyline.setColor(QColor(255, 0, 0))
+        polyline.setFillColor(QColor(0, 0, 255, 10)) # not working
+        polyline.setWidth(2)
+        polyline.show()
+        # enable the start button
+        start_btn = self.dockwidget.startButton
+        start_btn.setEnabled(True)
+        start_btn.clicked.connect(self.fence_raster)
+        # restore the map tool: the point selection is done
+        self.canvas.setMapTool(QgsMapToolPan(self.canvas))
 
-    #     from os import system
-    #     from qgis.gui import QgsMapToolEmitPoint, QgsMapToolPan, QgsRubberBand
-    #
-    #     counter = 0
-    #
-    #
-    #     def clip_raster(self):
-    #         import gdal
-    #
-    #         nonlocal counter
-    #         nonlocal ux, uy, lx, ly, output_file
-    #         counter += 1
-    #         if counter == 1:
-    #             ux, uy = coords.x(), coords.y()
-    #         elif counter == 2:
-    #             lx, ly = coords.x(), coords.y()
-    #             # restore the map tool: the point selection is done
-    #             canvas.setMapTool(QgsMapToolPan(canvas))
-    #             # get the selected layers
-    #             layer = canvas.currentLayer()
-    #             # perform the clip
-    #             if layer.type() == QgsMapLayer.RasterLayer:
-    #                 # clip the raster
-    #                 filename = layer.source()
-    #                 ds = gdal.Open(filename)
-    #                 ds = gdal.Translate(output_file + "/clipped.tif", ds, projWin = [ux, uy, lx, ly])
-    #                 ds = None
-    #                 # add it as a layer
-    #                 # self.iface.addRasterLayer(output_file + "/clipped.tif", "clipped_raster")
-    #             polyline = QgsRubberBand(canvas, False)  # False = not a polygon
-    #             points = [QgsPoint(ux, ly), QgsPoint(ux, uy), QgsPoint(lx, uy), QgsPoint(lx, ly), QgsPoint(ux, ly)]
-    #             polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
-    #             polyline.setColor(QColor(255, 0, 0))
-    #             polyline.setFillColor(QColor(0, 0, 255, 10))
-    #             polyline.setWidth(2)
-    #             polyline.show()
+    def fence_raster(self):
+        import gdal
+
+        ux, uy = self.ux, self.uy
+        lx, ly = self.lx, self.ly
+        # get the selected layer(s)
+        layer = self.canvas.currentLayer()
+        if layer.type() == QgsMapLayer.RasterLayer:
+            # clip the raster
+            filename = layer.source()
+            ds = gdal.Open(filename)
+            ds = gdal.Translate(self.output_file + "/clipped.tif", ds, projWin = [ux, uy, lx, ly])
+            ds = None
+            # add it as a layer
+            # self.iface.addRasterLayer(output_file + "/clipped.tif", "clipped_raster")
+        # delete the rectable
+        # self.canvas.scene().removeItem(self.polyline)

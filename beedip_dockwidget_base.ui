@@ -27,6 +27,12 @@
        <number>0</number>
       </property>
       <widget class="QWidget" name="export_2">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <attribute name="title">
         <string>Export</string>
        </attribute>
@@ -118,7 +124,7 @@
               <item>
                <widget class="QPushButton" name="startButton">
                 <property name="enabled">
-                 <bool>true</bool>
+                 <bool>false</bool>
                 </property>
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -137,7 +143,7 @@
            <item>
             <widget class="QWidget" name="row_1" native="true">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <layout class="QHBoxLayout" name="row_2">
               <item>
@@ -173,7 +179,7 @@
            <item>
             <widget class="QWidget" name="row_4" native="true">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <layout class="QHBoxLayout" name="row_3">
               <item>
