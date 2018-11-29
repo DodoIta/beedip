@@ -25,6 +25,7 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import *
 from qgis.core import *
+from qgis.gui import QgsMapTool, QgsMapToolPan, QgsRubberBand, QgsMapToolEmitPoint
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
@@ -368,19 +369,14 @@ class BeeDip:
                 error_dialog = QMessageBox.critical(None, "Error", "File not found.")
 
     def start_fence(self):
-        from qgis.gui import QgsMapToolEmitPoint
-
         # prompt the user to select a fence
 
         # start tracking mouse click
         self.canvas = self.iface.mapCanvas()
-        self.point_tool = QgsMapToolEmitPoint(self.canvas)
-        self.point_tool.canvasClicked.connect(self.get_first_point)
+        self.point_tool = MyMapTool(self.canvas)
         self.canvas.setMapTool(self.point_tool)
 
     def get_first_point(self):
-        from qgis.gui import QgsMapToolPan
-
         # get the coordinates
         coords = self.point_tool.toMapCoordinates(self.canvas.mouseLastXY())
         self.ux, self.uy = coords.x(), coords.y()
@@ -400,8 +396,6 @@ class BeeDip:
         self.point_tool.canvasClicked.connect(self.get_second_point)
 
     def get_second_point(self):
-        from qgis.gui import QgsMapToolPan, QgsRubberBand
-
         # get the coordinates
         coords = self.point_tool.toMapCoordinates(self.canvas.mouseLastXY())
         self.lx, self.ly = coords.x(), coords.y()
@@ -411,14 +405,6 @@ class BeeDip:
         self.point_tool.canvasClicked.disconnect(self.get_second_point)
         # reset the map tool
         self.canvas.setMapTool(QgsMapToolPan(self.canvas))
-        # draw rectangle
-        self.polyline = QgsRubberBand(self.canvas, False)  # False = not a polygon
-        points = [QgsPoint(self.ux, self.ly), QgsPoint(self.ux, self.uy), QgsPoint(self.lx, self.uy), QgsPoint(self.lx, self.ly), QgsPoint(self.ux, self.ly)]
-        self.polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
-        self.polyline.setColor(QColor(255, 0, 0))
-        self.polyline.setFillColor(QColor(0, 0, 255, 10)) # not working
-        self.polyline.setWidth(2)
-        self.polyline.show()
         # enable the start button
         start_btn = self.dockwidget.startButton
         start_btn.setEnabled(True)
@@ -443,3 +429,65 @@ class BeeDip:
             self.iface.addRasterLayer(self.output_file + "/clipped.tif", "clipped_raster")
         # delete the rectable
         self.canvas.scene().removeItem(self.polyline)
+
+
+class MyMapTool(QgsMapTool):
+    ux, uy = 0.0, 0.0
+    lx, ly = 0.0, 0.0
+    polyline = None
+
+    def __init__(self, canvas):
+        QgsMapTool.__init__(self, canvas)
+        self.canvas = canvas
+        self.polyline = QgsRubberBand(self.canvas, False)  # False = not a polygon
+
+    def canvasPressEvent(self, event):
+        # get the top right corner
+        x = event.pos().x()
+        y = event.pos().y()
+        point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
+        self.ux = point.x()
+        self.uy = point.y()
+        # print("started at ", self.ux, self.uy)
+
+    def canvasMoveEvent(self, event):
+        x = event.pos().x()
+        y = event.pos().y()
+        point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
+        self.lx = point.x()
+        self.ly = point.y()
+        self.drawRectangle()
+
+    def canvasReleaseEvent(self, event):
+        #Get the click
+        x = event.pos().x()
+        y = event.pos().y()
+        point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
+        self.lx = point.x()
+        self.ly = point.y()
+        self.drawRectangle()
+        # print("released at ", self.lx, self.ly)
+
+    def activate(self): # called when set as currently active map tool
+        pass
+
+    def deactivate(self): # called when map tool is being deactivated
+        pass
+
+    def isZoomTool(self):
+        return False
+
+    def isTransient(self):
+        return False
+
+    def isEditTool(self):
+        return True
+
+    def drawRectangle(self): # custom function
+        # draw rectangle
+        points = [QgsPoint(self.ux, self.ly), QgsPoint(self.ux, self.uy), QgsPoint(self.lx, self.uy), QgsPoint(self.lx, self.ly), QgsPoint(self.ux, self.ly)]
+        self.polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
+        self.polyline.setColor(QColor(255, 0, 0))
+        self.polyline.setFillColor(QColor(0, 0, 255, 10)) # not working
+        self.polyline.setWidth(2)
+        self.polyline.show()
