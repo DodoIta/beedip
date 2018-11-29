@@ -348,7 +348,8 @@ class BeeDip:
                 # connect the ok button
                 self.dockwidget.buttonBox.accepted.connect(self.perform_action)
                 # connect the other buttons
-                self.dockwidget.ulButton.clicked.connect(self.start_fence)
+                self.dockwidget.startButton.clicked.connect(self.start_raster_fence)
+                self.dockwidget.confirmButton.clicked.connect(self.fence_raster)
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
@@ -368,7 +369,7 @@ class BeeDip:
             else:
                 error_dialog = QMessageBox.critical(None, "Error", "File not found.")
 
-    def start_fence(self):
+    def start_raster_fence(self):
         # prompt the user to select a fence
 
         # start tracking mouse click
@@ -376,47 +377,27 @@ class BeeDip:
         self.point_tool = MyMapTool(self.canvas)
         self.canvas.setMapTool(self.point_tool)
 
-    def get_first_point(self):
-        # get the coordinates
-        coords = self.point_tool.toMapCoordinates(self.canvas.mouseLastXY())
-        self.ux, self.uy = coords.x(), coords.y()
-        # update gui
-        self.dockwidget.ulLineEdit.setText(str(self.ux) + " " + str(self.uy))
-        # enable the second row
-        self.point_tool.canvasClicked.disconnect(self.get_first_point)
-        self.dockwidget.lrButton.clicked.connect(self.enable_second_button)
-        # reset the map tool
-        self.canvas.setMapTool(QgsMapToolPan(self.canvas))
-
-    def enable_second_button(self):
-        # btn = self.dockwidget.lrButton
-        # if not btn.isEnabled():
-        #     btn.setEnabled(True)
-        self.canvas.setMapTool(self.point_tool)
-        self.point_tool.canvasClicked.connect(self.get_second_point)
-
-    def get_second_point(self):
-        # get the coordinates
-        coords = self.point_tool.toMapCoordinates(self.canvas.mouseLastXY())
-        self.lx, self.ly = coords.x(), coords.y()
-        # update gui
-        self.dockwidget.lrLineEdit.setText(str(self.lx) + " " + str(self.ly))
-        # disconnect event
-        self.point_tool.canvasClicked.disconnect(self.get_second_point)
-        # reset the map tool
-        self.canvas.setMapTool(QgsMapToolPan(self.canvas))
-        # enable the start button
-        start_btn = self.dockwidget.startButton
-        start_btn.setEnabled(True)
-        start_btn.clicked.connect(self.fence_raster)
-        # restore the map tool: the point selection is done
-        self.canvas.setMapTool(QgsMapToolPan(self.canvas))
+    # def get_first_point(self):
+    #     # get the coordinates
+    #     coords = self.point_tool.toMapCoordinates(self.canvas.mouseLastXY())
+    #     self.ux, self.uy = coords.x(), coords.y()
+    #     # update gui
+    #     self.dockwidget.ulLineEdit.setText(str(self.ux) + " " + str(self.uy))
+    #     # enable the second row
+    #     self.point_tool.canvasClicked.disconnect(self.get_first_point)
+    #     self.dockwidget.lrButton.clicked.connect(self.enable_second_button)
+    #     # reset the map tool
+    #     self.canvas.setMapTool(QgsMapToolPan(self.canvas))
 
     def fence_raster(self):
         import gdal
 
-        ux, uy = self.ux, self.uy
-        lx, ly = self.lx, self.ly
+        ux, uy = self.point_tool.ux, self.point_tool.uy
+        lx, ly = self.point_tool.lx, self.point_tool.ly
+
+        if self.point_tool.ux == self.point_tool.lx:
+            print("no selection")
+            return
         # get the selected layer(s)
         layer = self.canvas.currentLayer()
         if layer.type() == QgsMapLayer.RasterLayer:
@@ -427,14 +408,15 @@ class BeeDip:
             ds = None
             # add it as a layer
             self.iface.addRasterLayer(self.output_file + "/clipped.tif", "clipped_raster")
-        # delete the rectable
-        self.canvas.scene().removeItem(self.polyline)
+        # restore default map tool
+        self.canvas.setMapTool(QgsMapToolPan(self.canvas))
 
 
 class MyMapTool(QgsMapTool):
     ux, uy = 0.0, 0.0
     lx, ly = 0.0, 0.0
     polyline = None
+    isFencing = False
 
     def __init__(self, canvas):
         QgsMapTool.__init__(self, canvas)
@@ -448,9 +430,11 @@ class MyMapTool(QgsMapTool):
         point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
         self.ux = point.x()
         self.uy = point.y()
-        # print("started at ", self.ux, self.uy)
+        self.isFencing = True
 
     def canvasMoveEvent(self, event):
+        if not self.isFencing:
+            return
         x = event.pos().x()
         y = event.pos().y()
         point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
@@ -459,6 +443,8 @@ class MyMapTool(QgsMapTool):
         self.drawRectangle()
 
     def canvasReleaseEvent(self, event):
+        if not self.isFencing:
+            return
         #Get the click
         x = event.pos().x()
         y = event.pos().y()
@@ -466,13 +452,19 @@ class MyMapTool(QgsMapTool):
         self.lx = point.x()
         self.ly = point.y()
         self.drawRectangle()
-        # print("released at ", self.lx, self.ly)
+        self.isFencing = False
 
     def activate(self): # called when set as currently active map tool
-        pass
+        # print("custom tool activated")
+        # clear drawings, if present
+        if self.polyline != None:
+            self.polyline = QgsRubberBand(self.canvas, False)
 
     def deactivate(self): # called when map tool is being deactivated
-        pass
+        # delete the drawn rectangle
+        self.canvas.scene().removeItem(self.polyline)
+        self.ux, self.uy = 0.0, 0.0
+        self.lx, self.ly = 0.0, 0.0
 
     def isZoomTool(self):
         return False
