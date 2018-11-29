@@ -40,6 +40,7 @@ class BeeDip:
     # raster fence parameters
     point_tool = None
     canvas = None
+    polyline = None
     ux, uy = "0.0", "0.0" # top-left point
     lx, ly = "0.0", "0.0" # bottom-right point
     output_file = "/home/dodo/Projects/QGIS/tmp" # TODO: change it later
@@ -411,13 +412,13 @@ class BeeDip:
         # reset the map tool
         self.canvas.setMapTool(QgsMapToolPan(self.canvas))
         # draw rectangle
-        polyline = QgsRubberBand(self.canvas, False)  # False = not a polygon
+        self.polyline = QgsRubberBand(self.canvas, False)  # False = not a polygon
         points = [QgsPoint(self.ux, self.ly), QgsPoint(self.ux, self.uy), QgsPoint(self.lx, self.uy), QgsPoint(self.lx, self.ly), QgsPoint(self.ux, self.ly)]
-        polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
-        polyline.setColor(QColor(255, 0, 0))
-        polyline.setFillColor(QColor(0, 0, 255, 10)) # not working
-        polyline.setWidth(2)
-        polyline.show()
+        self.polyline.setToGeometry(QgsGeometry.fromPolyline(points), None)
+        self.polyline.setColor(QColor(255, 0, 0))
+        self.polyline.setFillColor(QColor(0, 0, 255, 10)) # not working
+        self.polyline.setWidth(2)
+        self.polyline.show()
         # enable the start button
         start_btn = self.dockwidget.startButton
         start_btn.setEnabled(True)
@@ -439,6 +440,6 @@ class BeeDip:
             ds = gdal.Translate(self.output_file + "/clipped.tif", ds, projWin = [ux, uy, lx, ly])
             ds = None
             # add it as a layer
-            # self.iface.addRasterLayer(output_file + "/clipped.tif", "clipped_raster")
+            self.iface.addRasterLayer(self.output_file + "/clipped.tif", "clipped_raster")
         # delete the rectable
-        # self.canvas.scene().removeItem(self.polyline)
+        self.canvas.scene().removeItem(self.polyline)
