@@ -231,7 +231,8 @@ class BeeDip:
         # get the file format and the driver
         driver = gdal.GetDriverByName(format)
         # convert to gpkg
-        output_ds = gdal.Translate(self.output_filename, input_ds)
+        # co = ["APPEND_SUBDATASET=YES", "RASTER_TABLE=new_table"]
+        output_ds = gdal.Translate(self.output_filename, input_ds)#, creationOptions=co)
         # close the datasets properly
         input_ds = None
         output_ds = None
@@ -377,15 +378,6 @@ class BeeDip:
         self.point_tool = MyMapTool(self.canvas)
         self.canvas.setMapTool(self.point_tool)
 
-    # def get_first_point(self):
-    #     # get the coordinates
-    #     coords = self.point_tool.toMapCoordinates(self.canvas.mouseLastXY())
-    #     self.ux, self.uy = coords.x(), coords.y()
-    #     # update gui
-    #     self.dockwidget.ulLineEdit.setText(str(self.ux) + " " + str(self.uy))
-    #     # enable the second row
-    #     self.point_tool.canvasClicked.disconnect(self.get_first_point)
-    #     self.dockwidget.lrButton.clicked.connect(self.enable_second_button)
     #     # reset the map tool
     #     self.canvas.setMapTool(QgsMapToolPan(self.canvas))
 
@@ -398,6 +390,9 @@ class BeeDip:
         if self.point_tool.ux == self.point_tool.lx:
             print("no selection")
             return
+        # display coordinates
+        # self.dockwidget.ulLineEdit.setText(self.point_tool.point1)
+        # self.dockwidget.lrLineEdit.setText(self.point_tool.point2)
         # get the selected layer(s)
         layer = self.canvas.currentLayer()
         if layer.type() == QgsMapLayer.RasterLayer:
@@ -413,6 +408,7 @@ class BeeDip:
 
 
 class MyMapTool(QgsMapTool):
+    point1, point2 = QgsPointXY(), QgsPointXY()
     ux, uy = 0.0, 0.0
     lx, ly = 0.0, 0.0
     polyline = None
@@ -427,9 +423,9 @@ class MyMapTool(QgsMapTool):
         # get the top right corner
         x = event.pos().x()
         y = event.pos().y()
-        point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
-        self.ux = point.x()
-        self.uy = point.y()
+        self.point1 = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
+        self.ux = self.point1.x()
+        self.uy = self.point1.y()
         self.isFencing = True
 
     def canvasMoveEvent(self, event):
@@ -437,20 +433,25 @@ class MyMapTool(QgsMapTool):
             return
         x = event.pos().x()
         y = event.pos().y()
-        point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
-        self.lx = point.x()
-        self.ly = point.y()
+        self.point2 = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
+        self.lx = self.point2.x()
+        self.ly = self.point2.y()
         self.drawRectangle()
 
     def canvasReleaseEvent(self, event):
         if not self.isFencing:
             return
-        #Get the click
+        # get the click
         x = event.pos().x()
         y = event.pos().y()
-        point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
-        self.lx = point.x()
-        self.ly = point.y()
+        self.point2 = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
+        self.lx = self.point2.x()
+        self.ly = self.point2.y()
+        # determine upper left and lower right points
+        self.ux = min(self.point1.x(), self.point2.x())
+        self.uy = max(self.point1.y(), self.point2.y())
+        self.lx = max(self.point1.x(), self.point2.x())
+        self.ly = min(self.point1.y(), self.point2.y())
         self.drawRectangle()
         self.isFencing = False
 
@@ -463,17 +464,9 @@ class MyMapTool(QgsMapTool):
     def deactivate(self): # called when map tool is being deactivated
         # delete the drawn rectangle
         self.canvas.scene().removeItem(self.polyline)
+        # reset class attributes
         self.ux, self.uy = 0.0, 0.0
         self.lx, self.ly = 0.0, 0.0
-
-    def isZoomTool(self):
-        return False
-
-    def isTransient(self):
-        return False
-
-    def isEditTool(self):
-        return True
 
     def drawRectangle(self): # custom function
         # draw rectangle
