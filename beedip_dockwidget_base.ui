@@ -221,16 +221,16 @@
              <property name="enabled">
               <bool>true</bool>
              </property>
-             <layout class="QHBoxLayout" name="row_5">
-              <item>
-               <widget class="QLabel" name="lrLabel">
+             <layout class="QFormLayout" name="formLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="ulLabel">
                 <property name="text">
-                 <string>Lower Right Corner</string>
+                 <string>Upper Left Corner</string>
                 </property>
                </widget>
               </item>
-              <item>
-               <widget class="QLineEdit" name="lrLineEdit">
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="ulLineEdit">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -242,15 +242,15 @@
                 </property>
                </widget>
               </item>
-              <item>
-               <widget class="QLabel" name="ulLabel">
+              <item row="1" column="0">
+               <widget class="QLabel" name="lrLabel">
                 <property name="text">
-                 <string>Upper Left Corner</string>
+                 <string>Lower Right Corner</string>
                 </property>
                </widget>
               </item>
-              <item>
-               <widget class="QLineEdit" name="ulLineEdit">
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="lrLineEdit">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                   <horstretch>0</horstretch>
