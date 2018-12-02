@@ -265,8 +265,8 @@ class BeeDip:
             elif type(layer) is QgsVectorLayer:
                 print("%s is a vector" % layer.name())
                 self.export_vector(layer)
-            # save style to the database
-            layer.saveStyleToDatabase("%s_style" % layer.name(), "", False, "")
+                # save style to the database
+                layer.saveStyleToDatabase("%s_style" % layer.name(), "", False, "")
 
     def import_layers(self):
         import sqlite3
