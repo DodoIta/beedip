@@ -25,7 +25,7 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
 from PyQt5.QtGui import QIcon, QColor, QCursor
 from PyQt5.QtWidgets import *
 from qgis.core import *
-from qgis.gui import QgsMapTool, QgsMapToolPan, QgsRubberBand, QgsMapToolEmitPoint
+from qgis.gui import QgsMapTool, QgsMapToolPan, QgsRubberBand, QgsMapToolEmitPoint, QgsMessageBar
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
@@ -246,7 +246,7 @@ class BeeDip:
         opt.layerOptions = ["OVERWRITE=YES"]
         opt.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
         error = QgsVectorFileWriter.writeAsVectorFormat(layer, self.output_filename,
-        options=opt)
+                    options=opt)
         if error[0] == 0:
             print("Exported layer %s" % layer.name())
         else:
@@ -266,9 +266,7 @@ class BeeDip:
                 print("%s is a vector" % layer.name())
                 self.export_vector(layer)
             # save style to the database
-            if not type(layer) is QgsRasterLayer and self.dockwidget.checkBox.isChecked():
-                print("Exporting style too.")
-                layer.saveStyleToDatabase("%s_style" % layer.name(), "", False, "")
+            layer.saveStyleToDatabase("%s_style" % layer.name(), "", False, "")
 
     def import_layers(self):
         import sqlite3
@@ -395,7 +393,9 @@ class BeeDip:
         self.dockwidget.lrLineEdit.setText(self.point_tool.point2.toString())
         # get the selected layer(s)
         layer = self.canvas.currentLayer()
-        if layer.type() == QgsMapLayer.RasterLayer:
+        if layer == None:
+            err = QMessageBox.critical(None, "Error", "No layer selected")
+        elif layer.type() == QgsMapLayer.RasterLayer:
             # clip the raster
             filename = layer.source()
             ds = gdal.Open(filename)
@@ -403,8 +403,12 @@ class BeeDip:
             ds = None
             # add it as a layer
             self.iface.addRasterLayer(self.output_file + "/clipped.tif", "clipped_raster")
-        # restore default map tool
-        self.canvas.setMapTool(QgsMapToolPan(self.canvas))
+            # show message
+            self.iface.messageBar().pushSuccess("Success", "Raster layer correctly fenced.")
+            # restore default map tool (deactivate custom maptool)
+            self.canvas.setMapTool(QgsMapToolPan(self.canvas))
+        else:
+            warn = QMessageBox.warning(None, "Warning", "The selected layer is not a raster.")
 
 
 class MyMapTool(QgsMapTool):
