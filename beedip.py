@@ -22,7 +22,7 @@
  ***************************************************************************/
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
-from PyQt5.QtGui import QIcon, QColor
+from PyQt5.QtGui import QIcon, QColor, QCursor
 from PyQt5.QtWidgets import *
 from qgis.core import *
 from qgis.gui import QgsMapTool, QgsMapToolPan, QgsRubberBand, QgsMapToolEmitPoint
@@ -180,10 +180,10 @@ class BeeDip:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/bee_dip/icon.png'
+        icon_path = ':/plugins/beedip/icon.png'
         self.add_action(
             icon_path,
-            text=self.tr(u'to do'),
+            text=self.tr(u'Official Beedip plugin'),
             callback=self.run,
             parent=self.iface.mainWindow())
 
@@ -391,8 +391,8 @@ class BeeDip:
             print("no selection")
             return
         # display coordinates
-        # self.dockwidget.ulLineEdit.setText(self.point_tool.point1)
-        # self.dockwidget.lrLineEdit.setText(self.point_tool.point2)
+        self.dockwidget.ulLineEdit.setText(self.point_tool.point1.toString())
+        self.dockwidget.lrLineEdit.setText(self.point_tool.point2.toString())
         # get the selected layer(s)
         layer = self.canvas.currentLayer()
         if layer.type() == QgsMapLayer.RasterLayer:
@@ -445,8 +445,6 @@ class MyMapTool(QgsMapTool):
         x = event.pos().x()
         y = event.pos().y()
         self.point2 = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
-        self.lx = self.point2.x()
-        self.ly = self.point2.y()
         # determine upper left and lower right points
         self.ux = min(self.point1.x(), self.point2.x())
         self.uy = max(self.point1.y(), self.point2.y())
@@ -460,6 +458,7 @@ class MyMapTool(QgsMapTool):
         # clear drawings, if present
         if self.polyline != None:
             self.polyline = QgsRubberBand(self.canvas, False)
+        # self.setCursor(QCursor(Qt.CrossCursor))
 
     def deactivate(self): # called when map tool is being deactivated
         # delete the drawn rectangle
