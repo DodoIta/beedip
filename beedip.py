@@ -44,7 +44,6 @@ class BeeDip:
     polyline = None
     ux, uy = "0.0", "0.0" # top-left point
     lx, ly = "0.0", "0.0" # bottom-right point
-    output_file = "/home/dodo/Projects/QGIS/tmp" # TODO: change it later
 
     def __init__(self, iface):
         """Constructor.
@@ -380,10 +379,11 @@ class BeeDip:
     #     self.canvas.setMapTool(QgsMapToolPan(self.canvas))
 
     def fence_raster(self):
-        import gdal
+        import gdal, tempfile
 
         ux, uy = self.point_tool.ux, self.point_tool.uy
         lx, ly = self.point_tool.lx, self.point_tool.ly
+        output_dir = tempfile.gettempdir()
 
         if self.point_tool.ux == self.point_tool.lx:
             print("no selection")
@@ -396,13 +396,15 @@ class BeeDip:
         if layer == None:
             err = QMessageBox.critical(None, "Error", "No layer selected")
         elif layer.type() == QgsMapLayer.RasterLayer:
-            # clip the raster
+            # clip the raster and save it on a temporary folder
             filename = layer.source()
+            layername = "clipped_" + layer.name() # clipped layer's name (in QGIS)
+            output_dir = output_dir + "/" + layername + ".tif" # full output file path
             ds = gdal.Open(filename)
-            ds = gdal.Translate(self.output_file + "/clipped.tif", ds, projWin = [ux, uy, lx, ly])
+            ds = gdal.Translate(output_dir, ds, projWin = [ux, uy, lx, ly])
             ds = None
             # add it as a layer
-            self.iface.addRasterLayer(self.output_file + "/clipped.tif", "clipped_raster")
+            self.iface.addRasterLayer(output_dir, layername)
             # show message
             self.iface.messageBar().pushSuccess("Success", "Raster layer correctly fenced.")
             # restore default map tool (deactivate custom maptool)
