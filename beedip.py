@@ -345,8 +345,8 @@ class BeeDip:
                 # connect the ok button
                 self.dockwidget.buttonBox.accepted.connect(self.perform_action)
                 # connect the other buttons
-                self.dockwidget.startButton.clicked.connect(self.start_raster_fence)
-                self.dockwidget.confirmButton.clicked.connect(self.fence_raster)
+                self.dockwidget.rasterStartBtn.clicked.connect(self.start_raster_fence)
+                self.dockwidget.rasterConfirmBtn.clicked.connect(self.fence_raster)
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
@@ -385,8 +385,8 @@ class BeeDip:
             print("no selection")
             return
         # display coordinates
-        self.dockwidget.ulLineEdit.setText(self.point_tool.point1.toString())
-        self.dockwidget.lrLineEdit.setText(self.point_tool.point2.toString())
+        self.dockwidget.rasterUL.setText(self.point_tool.point1.toString())
+        self.dockwidget.rasterLR.setText(self.point_tool.point2.toString())
         # get the selected layer(s)
         layer = self.canvas.currentLayer()
         if layer == None:
