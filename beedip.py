@@ -25,7 +25,7 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
 from PyQt5.QtGui import QIcon, QColor, QCursor
 from PyQt5.QtWidgets import *
 from qgis.core import *
-from qgis.gui import QgsMapTool, QgsMapToolPan, QgsRubberBand, QgsMapToolEmitPoint, QgsMessageBar
+from qgis.gui import QgsMapTool, QgsMapToolPan, QgsRubberBand, QgsMapToolExtent, QgsMessageBar
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
@@ -185,7 +185,6 @@ class BeeDip:
             text=self.tr(u'Official Beedip plugin'),
             callback=self.run,
             parent=self.iface.mainWindow())
-
 
 
     def select_output_file(self):
@@ -375,9 +374,6 @@ class BeeDip:
         self.point_tool = MyMapTool(self.canvas)
         self.canvas.setMapTool(self.point_tool)
 
-    #     # reset the map tool
-    #     self.canvas.setMapTool(QgsMapToolPan(self.canvas))
-
     def fence_raster(self):
         import gdal, tempfile
 
@@ -407,8 +403,8 @@ class BeeDip:
             self.iface.addRasterLayer(output_dir, layername)
             # show message
             self.iface.messageBar().pushSuccess("Success", "Raster layer correctly fenced.")
-            # restore default map tool (deactivate custom maptool)
-            self.canvas.setMapTool(QgsMapToolPan(self.canvas))
+            # deactivate custom maptool
+            self.point_tool.deactivate()
         else:
             warn = QMessageBox.warning(None, "Warning", "The selected layer is not a raster.")
 
@@ -424,6 +420,7 @@ class MyMapTool(QgsMapTool):
         QgsMapTool.__init__(self, canvas)
         self.canvas = canvas
         self.polyline = QgsRubberBand(self.canvas, False)  # False = not a polygon
+        self.setCursor(Qt.CrossCursor) # not working
 
     def canvasPressEvent(self, event):
         # get the top right corner
