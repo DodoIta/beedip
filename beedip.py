@@ -25,7 +25,7 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
 from PyQt5.QtGui import QIcon, QColor, QCursor
 from PyQt5.QtWidgets import *
 from qgis.core import *
-from qgis.gui import QgsMapTool, QgsMapToolPan, QgsRubberBand, QgsMapToolExtent, QgsMessageBar
+from qgis.gui import QgsMapTool, QgsMapToolPan, QgsRubberBand, QgsMapToolExtent, QgsMessageBar, QgsMapToolEmitPoint
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
@@ -329,6 +329,7 @@ class BeeDip:
 
             #print "** STARTING BeeDip"
             self.import_svg()
+            self.canvas = self.iface.mapCanvas()
 
             # dockwidget may not exist if:
             #    first run of plugin
@@ -345,8 +346,10 @@ class BeeDip:
                 # connect the ok button
                 self.dockwidget.buttonBox.accepted.connect(self.perform_action)
                 # connect the other buttons
-                self.dockwidget.rasterStartBtn.clicked.connect(self.start_raster_fence)
+                self.dockwidget.rasterStartBtn.clicked.connect(self.start_fence)
                 self.dockwidget.rasterConfirmBtn.clicked.connect(self.fence_raster)
+                self.dockwidget.vectorStartBtn.clicked.connect(self.start_fence)
+                self.dockwidget.vectorConfirmBtn.clicked.connect(self.fence_vector)
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
@@ -366,11 +369,9 @@ class BeeDip:
             else:
                 error_dialog = QMessageBox.critical(None, "Error", "File not found.")
 
-    def start_raster_fence(self):
+    def start_fence(self):
         # prompt the user to select a fence
-
         # start tracking mouse click
-        self.canvas = self.iface.mapCanvas()
         self.point_tool = MyMapTool(self.canvas)
         self.canvas.setMapTool(self.point_tool)
 
@@ -407,6 +408,54 @@ class BeeDip:
             self.point_tool.deactivate()
         else:
             warn = QMessageBox.warning(None, "Warning", "The selected layer is not a raster.")
+
+    def fence_vector(self):
+        point1 = self.point_tool.point1
+        point2 = self.point_tool.point2
+        layers = []
+
+        # get all project layers
+        layers.append(self.iface.activeLayer())
+        # build a QgsRectangle
+        rect = QgsRectangle(point1, point2)
+        print(rect)
+        # check if there are features inside the rectangle
+        # select layer features on the map
+
+    def getLayerInfo(self, layer):
+        features = layer.getFeatures()
+
+        for feature in features:
+            # retrieve every feature with its geometry and attributes
+            print("Feature ID: ", feature.id())
+            # fetch geometry and show some information about the feature geometry
+            geom = feature.geometry()
+            geomSingleType = QgsWkbTypes.isSingleType(geom.wkbType())
+
+            if geom.type() == QgsWkbTypes.PointGeometry:
+                # the geometry type can be of single or multi type
+                if geomSingleType:
+                    x = geom.asPoint()
+                    print("Point: ", x)
+                else:
+                    x = geom.asMultiPoint()
+                    print("MultiPoint: ", x)
+            elif geom.type() == QgsWkbTypes.LineGeometry:
+                if geomSingleType:
+                    x = geom.asPolyline()
+                    print("Line: ", x, "length: ", geom.length())
+                else:
+                    x = geom.asMultiPolyline()
+                    print("MultiLine: ", x, "length: ", geom.length())
+            elif geom.type() == QgsWkbTypes.PolygonGeometry:
+                if geomSingleType:
+                    x = geom.asPolygon()
+                    print("Polygon: ", x, "Area: ", geom.area())
+                else:
+                    x = geom.asMultiPolygon()
+                    print("MultiPolygon: ", x, "Area: ", geom.area())
+            else:
+                print("Unknown or invalid geometry")
 
 
 class MyMapTool(QgsMapTool):
@@ -478,3 +527,22 @@ class MyMapTool(QgsMapTool):
         self.polyline.setFillColor(QColor(0, 0, 255, 10)) # not working
         self.polyline.setWidth(2)
         self.polyline.show()
+
+
+class VectorFenceMapTool(QgsMapToolEmitPoint):
+    layers = []
+
+    def __init__(self, canvas, layers):
+        MyMapTool.__init__(self, canvas)
+        self.canvas = canvas
+        self.layers = layers
+
+    def canvasPressEvent(self, event):
+        print("overriding press event")
+
+    def canvasReleaseEvent(self, event):
+        rect = self.extent()
+        print("Rectangle: ", rect)
+
+        # if rect.contains(layers[0]):
+        #     print("TRUE!")
