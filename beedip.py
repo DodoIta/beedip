@@ -417,15 +417,13 @@ class BeeDip:
         # build a QgsRectangle
         rect = QgsRectangle(point1, point2)
         # get all project layers
-        layers = self.iface.layerTreeView().selectedLayers()
+        layer = self.iface.activeLayer()
         # check if there are features inside the rectangle
-        for layer in layers:
-            if type(layer) is QgsVectorLayer:
-                selection = []
-                selection = self.getLayerInfo(layer, rect)
-                # select layer features on the map
-                for id in selection:
-                    layer.select(id)
+        if type(layer) is QgsVectorLayer:
+            selection = []
+            selection = self.getLayerInfo(layer, rect)
+            # select layer features on the map
+            layer.select(selection)
 
     def getLayerInfo(self, layer, rect):
         features = layer.getFeatures()
