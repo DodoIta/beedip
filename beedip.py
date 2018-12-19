@@ -420,50 +420,11 @@ class BeeDip:
         layer = self.iface.activeLayer()
         # check if there are features inside the rectangle
         if type(layer) is QgsVectorLayer:
-            selection = []
-            selection = self.getLayerInfo(layer, rect)
             # select layer features on the map
-            layer.select(selection)
-
-    def getLayerInfo(self, layer, rect):
-        features = layer.getFeatures()
-        x = None # feature's coordinates
-        selection = [] # output
-
-        for feature in features:
-            # fetch geometry and show some information about the feature geometry
-            geom = feature.geometry()
-            geomSingleType = QgsWkbTypes.isSingleType(geom.wkbType())
-
-            if geom.type() == QgsWkbTypes.PointGeometry:
-                # the geometry type can be of single or multi type
-                if geomSingleType:
-                    x = geom.asPoint()
-                    # print("Point: ", x)
-                else:
-                    x = geom.asMultiPoint()
-                    # print("MultiPoint: ", x)
-            elif geom.type() == QgsWkbTypes.LineGeometry:
-                if geomSingleType:
-                    x = geom.asPolyline()
-                    # print("Line: ", x, "length: ", geom.length())
-                else:
-                    x = geom.asMultiPolyline()
-                    # print("MultiLine: ", x, "length: ", geom.length())
-            elif geom.type() == QgsWkbTypes.PolygonGeometry:
-                if geomSingleType:
-                    x = geom.asPolygon()
-                    # print("Polygon: ", x, "Area: ", geom.area())
-                else:
-                    x = geom.asMultiPolygon()
-                    # print("MultiPolygon: ", x, "Area: ", geom.area())
-            else:
-                print("Unknown or invalid geometry")
-
-            if rect.contains(x):
-                selection.append(feature.id())
-
-        return selection
+            layer.selectByRect(rect)
+            self.iface.messageBar().pushSuccess("Success", "Vector layer correctly fenced.")
+        else:
+            warn = QMessageBox.warning(None, "Warning", "The selected layer is not valid.")
 
 
 class MyMapTool(QgsMapTool):
