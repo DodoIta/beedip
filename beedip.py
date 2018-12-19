@@ -414,20 +414,25 @@ class BeeDip:
         point2 = self.point_tool.point2
         layers = []
 
-        # get all project layers
-        layers.append(self.iface.activeLayer())
         # build a QgsRectangle
         rect = QgsRectangle(point1, point2)
-        print(rect)
+        # get all project layers
+        layers = self.iface.layerTreeView().selectedLayers()
         # check if there are features inside the rectangle
-        # select layer features on the map
+        for layer in layers:
+            if type(layer) is QgsVectorLayer:
+                selection = []
+                selection = self.getLayerInfo(layer, rect)
+                # select layer features on the map
+                for id in selection:
+                    layer.select(id)
 
-    def getLayerInfo(self, layer):
+    def getLayerInfo(self, layer, rect):
         features = layer.getFeatures()
+        x = None # feature's coordinates
+        selection = [] # output
 
         for feature in features:
-            # retrieve every feature with its geometry and attributes
-            print("Feature ID: ", feature.id())
             # fetch geometry and show some information about the feature geometry
             geom = feature.geometry()
             geomSingleType = QgsWkbTypes.isSingleType(geom.wkbType())
@@ -436,26 +441,31 @@ class BeeDip:
                 # the geometry type can be of single or multi type
                 if geomSingleType:
                     x = geom.asPoint()
-                    print("Point: ", x)
+                    # print("Point: ", x)
                 else:
                     x = geom.asMultiPoint()
-                    print("MultiPoint: ", x)
+                    # print("MultiPoint: ", x)
             elif geom.type() == QgsWkbTypes.LineGeometry:
                 if geomSingleType:
                     x = geom.asPolyline()
-                    print("Line: ", x, "length: ", geom.length())
+                    # print("Line: ", x, "length: ", geom.length())
                 else:
                     x = geom.asMultiPolyline()
-                    print("MultiLine: ", x, "length: ", geom.length())
+                    # print("MultiLine: ", x, "length: ", geom.length())
             elif geom.type() == QgsWkbTypes.PolygonGeometry:
                 if geomSingleType:
                     x = geom.asPolygon()
-                    print("Polygon: ", x, "Area: ", geom.area())
+                    # print("Polygon: ", x, "Area: ", geom.area())
                 else:
                     x = geom.asMultiPolygon()
-                    print("MultiPolygon: ", x, "Area: ", geom.area())
+                    # print("MultiPolygon: ", x, "Area: ", geom.area())
             else:
                 print("Unknown or invalid geometry")
+
+            if rect.contains(x):
+                selection.append(feature.id())
+
+        return selection
 
 
 class MyMapTool(QgsMapTool):
@@ -527,22 +537,3 @@ class MyMapTool(QgsMapTool):
         self.polyline.setFillColor(QColor(0, 0, 255, 10)) # not working
         self.polyline.setWidth(2)
         self.polyline.show()
-
-
-class VectorFenceMapTool(QgsMapToolEmitPoint):
-    layers = []
-
-    def __init__(self, canvas, layers):
-        MyMapTool.__init__(self, canvas)
-        self.canvas = canvas
-        self.layers = layers
-
-    def canvasPressEvent(self, event):
-        print("overriding press event")
-
-    def canvasReleaseEvent(self, event):
-        rect = self.extent()
-        print("Rectangle: ", rect)
-
-        # if rect.contains(layers[0]):
-        #     print("TRUE!")
