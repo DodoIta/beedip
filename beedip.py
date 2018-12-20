@@ -300,7 +300,7 @@ class BeeDip:
 
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
-
+        self.point_tool.deactivate()
         # remove this statement if dockwidget is to remain
         # for reuse if plugin is reopened
 
@@ -414,12 +414,21 @@ class BeeDip:
         point2 = self.point_tool.point2
         layers = []
 
+        # check selection
+        if self.point_tool.ux == self.point_tool.lx:
+            print("no selection")
+            return
+        # display coordinates
+        self.dockwidget.vectorUL.setText(self.point_tool.point1.toString())
+        self.dockwidget.vectorLR.setText(self.point_tool.point2.toString())
         # build a QgsRectangle
         rect = QgsRectangle(point1, point2)
         # get all project layers
         layer = self.iface.activeLayer()
         # check if there are features inside the rectangle
-        if type(layer) is QgsVectorLayer:
+        if layer == None:
+            err = QMessageBox.critical(None, "Error", "No layer selected")
+        elif type(layer) is QgsVectorLayer:
             # select layer features on the map
             layer.selectByRect(rect)
             self.iface.messageBar().pushSuccess("Success", "Vector layer correctly fenced.")
