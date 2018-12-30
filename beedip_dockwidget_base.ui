@@ -23,8 +23,11 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="tabShape">
+       <enum>QTabWidget::Rounded</enum>
+      </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="export_2">
        <property name="sizePolicy">
@@ -38,7 +41,10 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <layout class="QHBoxLayout" name="outputRow">
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <property name="spacing">
+           <number>6</number>
+          </property>
           <item alignment="Qt::AlignVCenter">
            <widget class="QLabel" name="label_4">
             <property name="text">
@@ -47,9 +53,13 @@
            </widget>
           </item>
           <item alignment="Qt::AlignVCenter">
-           <widget class="QLineEdit" name="lineEdit"/>
+           <widget class="QLineEdit" name="lineEdit">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
-          <item>
+          <item alignment="Qt::AlignVCenter">
            <widget class="QPushButton" name="pushButton">
             <property name="text">
              <string>...</string>
@@ -57,6 +67,19 @@
            </widget>
           </item>
          </layout>
+        </item>
+        <item alignment="Qt::AlignHCenter">
+         <widget class="QDialogButtonBox" name="exportBbox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="standardButtons">
+           <set>QDialogButtonBox::Ok|QDialogButtonBox::Reset</set>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -70,13 +93,16 @@
           <item>
            <widget class="QLabel" name="label_3">
             <property name="text">
-             <string>Select a file</string>
+             <string>Select input file</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QLineEdit" name="lineEdit_2">
             <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="readOnly">
              <bool>true</bool>
             </property>
            </widget>
@@ -89,6 +115,19 @@
            </widget>
           </item>
          </layout>
+        </item>
+        <item alignment="Qt::AlignHCenter">
+         <widget class="QDialogButtonBox" name="importBbox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="standardButtons">
+           <set>QDialogButtonBox::Ok|QDialogButtonBox::Reset</set>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -231,7 +270,10 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>0000000.0000000</string>
+                 <string/>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -251,7 +293,10 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>0000000.0000000</string>
+                 <string/>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -383,7 +428,10 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>0000000.0000000</string>
+                 <string/>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -403,7 +451,10 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>0000000.0000000</string>
+                 <string/>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -415,22 +466,6 @@
         </item>
        </layout>
       </widget>
-     </widget>
-    </item>
-    <item>
-     <widget class="QDialogButtonBox" name="buttonBox">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <property name="standardButtons">
-       <set>QDialogButtonBox::Ok</set>
-      </property>
      </widget>
     </item>
    </layout>

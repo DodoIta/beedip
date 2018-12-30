@@ -278,6 +278,13 @@ class BeeDip:
         has_raster = False
         has_vector = False
 
+        # check input file existence
+        if not self.input_filename:
+            error_dialog = QMessageBox.critical(None, "Error", "File not found.")
+            return
+        elif not os.path.exists(self.input_filename):
+            error_dialog = QMessageBox.critical(None, "Error", "File not found.")
+            return
         # open the db
         connection = sqlite3.connect(self.input_filename)
         c = connection.cursor()
@@ -311,7 +318,8 @@ class BeeDip:
 
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
-        self.point_tool.deactivate()
+        if self.point_tool:
+            self.point_tool.deactivate()
         # remove this statement if dockwidget is to remain
         # for reuse if plugin is reopened
 
@@ -355,7 +363,8 @@ class BeeDip:
                 self.dockwidget.lineEdit.clear()
                 self.dockwidget.pushButton_2.clicked.connect(self.select_input_file)
                 # connect the ok button
-                self.dockwidget.buttonBox.accepted.connect(self.perform_action)
+                self.dockwidget.exportBbox.accepted.connect(self.export_layers)
+                self.dockwidget.importBbox.accepted.connect(self.import_layers)
                 # connect the other buttons
                 self.dockwidget.rasterStartBtn.clicked.connect(self.start_fence)
                 self.dockwidget.rasterConfirmBtn.clicked.connect(self.fence_raster)
@@ -369,16 +378,6 @@ class BeeDip:
             # TODO: fix to allow choice of dock location
             self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
-
-    def perform_action(self):
-        # check current tab
-        if self.dockwidget.tabWidget.currentIndex() == 0:
-            self.export_layers()
-        elif self.dockwidget.tabWidget.currentIndex() == 1:
-            if os.path.exists(self.input_filename):
-                self.import_layers()
-            else:
-                error_dialog = QMessageBox.critical(None, "Error", "File not found.")
 
     def start_fence(self):
         # prompt the user to select a fence
@@ -414,7 +413,7 @@ class BeeDip:
             # add it as a layer
             self.iface.addRasterLayer(output_dir, layername)
             # show message
-            self.iface.messageBar().pushSuccess("Success", "Raster layer correctly fenced.")
+            self.iface.messageBar().pushSuccess("Success", "Raster layer correctly clipped.")
             # deactivate custom maptool
             self.point_tool.deactivate()
         else:
@@ -442,9 +441,11 @@ class BeeDip:
         elif type(layer) is QgsVectorLayer:
             # select layer features on the map
             layer.selectByRect(rect)
-            self.iface.messageBar().pushSuccess("Success", "Vector layer correctly fenced.")
+            self.iface.messageBar().pushSuccess("Success", "Vector layer's fields correctly selected.")
         else:
             warn = QMessageBox.warning(None, "Warning", "The selected layer is not valid.")
+        # deactivate custom maptool
+        self.point_tool.deactivate()
 
 
 class MyMapTool(QgsMapTool):
