@@ -254,6 +254,10 @@ class BeeDip:
         # get the selected layers
         layers = self.iface.layerTreeView().selectedLayers()
 
+        if len(layers) == 0:
+            err = QMessageBox.critical(None, "Error", "No layer selected.")
+            return
+
         for layer in layers:
             print("Exporting layer %s" % layer.name())
             # check layer type
@@ -265,6 +269,8 @@ class BeeDip:
                 self.export_vector(layer)
                 # save style to the database
                 layer.saveStyleToDatabase("%s_style" % layer.name(), "", False, "")
+
+        self.iface.messageBar().pushSuccess("Success", "Layers correctly exported.")
 
     def import_layers(self):
         import sqlite3
@@ -286,10 +292,15 @@ class BeeDip:
         # close the db
         c.close()
 
-        if has_raster:
-            layer = self.iface.addRasterLayer(self.input_filename, "imported raster")
-        if has_vector:
-            layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
+        try:
+            if has_raster:
+                layer = self.iface.addRasterLayer(self.input_filename, "imported raster")
+            if has_vector:
+                layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
+        except Exception as e:
+            self.iface.messageBar().pushCritical("Error", "Could not import GeoPackage.")
+        finally:
+            self.iface.messageBar().pushSuccess("Success", "GeoPackage correctly imported.")
 
     #--------------------------------------------------------------------------
 
