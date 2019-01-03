@@ -257,6 +257,9 @@ class BeeDip:
         if len(layers) == 0:
             err = QMessageBox.critical(None, "Error", "No layer selected.")
             return
+        if not self.output_filename:
+            warn = QMessageBox.warning(None, "Warning", "No file selected.")
+            return
 
         for layer in layers:
             print("Exporting layer %s" % layer.name())
@@ -309,7 +312,8 @@ class BeeDip:
             if has_raster:
                 layer = self.iface.addRasterLayer(self.input_filename, "imported raster")
             if has_vector:
-                layer = self.iface.addVectorLayer(self.input_filename, "imported", "ogr")
+                layer = self.iface.addVectorLayer(self.input_filename, "", "ogr")
+                print("adding vector ", layer)
         except Exception as e:
             self.iface.messageBar().pushCritical("Error", "Could not import GeoPackage.")
         finally:
