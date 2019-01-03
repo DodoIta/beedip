@@ -288,14 +288,20 @@ class BeeDip:
         # open the db
         connection = sqlite3.connect(self.input_filename)
         c = connection.cursor()
-        # check if a raster is present
-        rows = c.execute("select * from gpkg_tile_matrix").fetchall()
-        if len(rows) > 0:
-            has_raster = True
         # check if a vector is present
-        rows = c.execute("select * from gpkg_contents where data_type != \"tiles\"").fetchall()
-        if len(rows) > 0:
-            has_vector = True
+        try:
+            rows = c.execute("select * from gpkg_contents where data_type != \"tiles\"").fetchall()
+            if len(rows) > 0:
+                has_vector = True
+        except sqlite3.OperationalError:
+            print("database has no vector")
+        # check if a raster is present
+        try:
+            rows = c.execute("select * from gpkg_tile_matrix").fetchall()
+            if len(rows) > 0:
+                has_raster = True
+        except sqlite3.OperationalError:
+            print("database has no raster")
         # close the db
         c.close()
 
