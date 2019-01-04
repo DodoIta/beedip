@@ -237,16 +237,21 @@ class BeeDip:
 
     def export_vector(self, layer):
         from qgis.core import QgsVectorFileWriter
+        from os.path import basename
 
+        # extract layer name, this is necessary to avoid a loop with layer names
+        # since QGIS preponds the geopackage's name to the layer name
+        db_name = basename(self.output_filename).split(".")[0] + " "
+        layer_name = layer.name().replace(db_name, "")
         crs = layer.crs()
         opt = QgsVectorFileWriter.SaveVectorOptions()
-        opt.layerName = layer.name()
+        opt.layerName = layer_name
         opt.layerOptions = ["OVERWRITE=YES"]
         opt.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
         error = QgsVectorFileWriter.writeAsVectorFormat(layer, self.output_filename,
                     options=opt)
         if error[0] == 0:
-            print("Exported layer %s" % layer.name())
+            print("Exported layer as", opt.layerName)
         else:
             print(error)
 
@@ -262,16 +267,13 @@ class BeeDip:
             return
 
         for layer in layers:
-            print("Exporting layer %s" % layer.name())
             # check layer type
             if type(layer) is QgsRasterLayer:
-                print("%s is a raster" % layer.name())
                 self.export_raster(layer)
             elif type(layer) is QgsVectorLayer:
-                print("%s is a vector" % layer.name())
                 self.export_vector(layer)
                 # save style to the database
-                layer.saveStyleToDatabase("%s_style" % layer.name(), "", False, "")
+                layer.saveStyleToDatabase("{}_style".format(layer.name()), "", False, "")
 
         self.iface.messageBar().pushSuccess("Success", "Layers correctly exported.")
 
@@ -308,16 +310,14 @@ class BeeDip:
         # close the db
         c.close()
 
-        try:
-            if has_raster:
-                layer = self.iface.addRasterLayer(self.input_filename, "imported raster")
-            if has_vector:
-                layer = self.iface.addVectorLayer(self.input_filename, "", "ogr")
-                print("adding vector ", layer)
-        except Exception as e:
-            self.iface.messageBar().pushCritical("Error", "Could not import GeoPackage.")
-        finally:
-            self.iface.messageBar().pushSuccess("Success", "GeoPackage correctly imported.")
+        # add layers to project
+        layer = None
+        if has_raster:
+            layer = self.iface.addRasterLayer(self.input_filename, "imported raster")
+        if has_vector:
+            layer = self.iface.addVectorLayer(self.input_filename, "", "ogr")
+        # WIP
+        self.iface.messageBar().pushSuccess("Success", "Layers correctly imported.")
 
     #--------------------------------------------------------------------------
 
